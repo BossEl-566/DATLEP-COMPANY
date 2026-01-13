@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+      }
+      h1 {
+        color: #4CAF50;
+      }
+      a {
+        color: #1E90FF;
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+    </style>
+    <title>User Activation</title>
+  </head>
+  <body>
+    <h1>Welcome to DATLEP, <%= name %>!</h1>
+    <p>Thank you for registering with us. Please click the link below to activate your account:</p>
+    <a href="<%= activationLink %>">Activate Your Account</a>
+    <p>If you did not sign up for this account, please ignore this email.</p>
+    <p>Best regards,<br/>The DATLEP Team</p>
+  </body>

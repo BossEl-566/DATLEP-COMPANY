@@ -16,6 +16,13 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "es2022",
-    "customConditions": ["@datlep/source"]
+    "customConditions": ["@datlep/source"],
+
+    // ✅ ADD THESE
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@prisma/*": ["src/generated/prisma/*"]
+    }
   }
 }

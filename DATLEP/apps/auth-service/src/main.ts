@@ -1,30 +1,46 @@
-import express from 'express';
-import cors from 'cors';
-import { errorMiddleware } from '../../../packages/error-handler/error-middleware';
-import cookieParser from 'cookie-parser';
+import express from "express";
+import cors from "cors";
+import { errorMiddleware } from "../../../packages/error-handler/error-middleware";
+import cookieParser from "cookie-parser";
+import router from "./routes/auth.router";
+import { connectDatabase } from "@datlep/database";
+
 
 
 const app = express();
 
 app.use(
   cors({
-    origin: ['http://localhost:3000'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    origin: ["http://localhost:3000"],
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
 );
 app.use(express.json());
 app.use(cookieParser());
 
-app.get('/', (req, res) => {
-    res.send({ 'message': 'Hello API'});
+app.get("/", (req, res) => {
+  res.send({ message: "Hello API" });
 });
 
-app.use(errorMiddleware);  
+// Import and use auth routes
+app.use("/api", router);
+
+app.use(errorMiddleware);
 
 const port = process.env.PORT || 6001;
-const server = app.listen(port, () => {
-  console.log(`Auth Service listening at http://localhost:${port}/api`);
-});
-server.on('error', (err) => console.log('Server error:', err));
 
+const startServer = async () => {
+  try {
+    // ⚡ Connect to MongoDB first
+    await connectDatabase(process.env.MONGO_URI!);
+
+    app.listen(port, () => {
+      console.log(`Auth Service listening at http://localhost:${port}/api`);
+    });
+  } catch (err) {
+    console.error("Failed to start server:", err);
+  }
+}; 
+
+startServer();
