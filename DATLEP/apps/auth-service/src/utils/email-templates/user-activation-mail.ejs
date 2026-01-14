@@ -19,13 +19,38 @@
       a:hover {
         text-decoration: underline;
       }
+      .otp-box {
+        margin: 20px 0;
+        padding: 15px;
+        background: #f4f4f4;
+        border: 1px dashed #4CAF50;
+        font-size: 24px;
+        font-weight: bold;
+        text-align: center;
+        letter-spacing: 4px;
+      }
     </style>
     <title>User Activation</title>
   </head>
   <body>
     <h1>Welcome to DATLEP, <%= name %>!</h1>
-    <p>Thank you for registering with us. Please click the link below to activate your account:</p>
+
+    <p>Your One-Time Password (OTP) is:</p>
+
+    <div class="otp-box">
+      <%= otp %>
+    </div>
+
+    <p>This OTP is valid for <strong>5 minutes</strong>.</p>
+
+    <p>
+      Or click the link below to activate your account:
+    </p>
+
     <a href="<%= activationLink %>">Activate Your Account</a>
+
     <p>If you did not sign up for this account, please ignore this email.</p>
-    <p>Best regards,<br/>The DATLEP Team</p>
+
+    <p>Best regards,<br />The DATLEP Team</p>
   </body>
+</html>
