@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { ValidationError } from "../../../../packages/error-handler";
+import { AuthenticationError, ValidationError } from "../../../../packages/error-handler";
 import {
   checkOtpRestriction,
   sendOtp,
@@ -9,6 +9,8 @@ import {
 } from "../utils/auth.helper";
 import { User } from "@datlep/database";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { setCookie } from "../utils/cookies/setCookie";
 
 // Register a new user
 export const userRegistration = async (
@@ -73,3 +75,51 @@ export const verifyUserOtp = async (
     return next(error);
   }
 }
+
+// Login User
+export const loginUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+   const { email, password } = req.body;
+   if (!email || !password) {
+    return next(new ValidationError("Email and password are required"));
+   } 
+    const user = await User.findOne({ email });
+    if (!user) {
+      return next(new AuthenticationError("User not found"));
+    }
+    //verify password
+    const isMatch = await bcrypt.compare(password, user.password!);
+    if (!isMatch) {
+      return next(new AuthenticationError("Invalid credentials"));
+    }
+
+    //Generate access and refresh tokens 
+    const accessToken = jwt.sign({
+      id: user.id, role: 'user'
+    }, process.env.ACCESS_TOKEN_SECRET!, { expiresIn: "15m" });
+
+    const refreshToken = jwt.sign({
+      id: user.id, role: 'user'
+    }, process.env.REFRESH_TOKEN_SECRET!, { expiresIn: "7d" });
+
+    // Send tokens in response
+    setCookie(res, 'refreshToken', refreshToken);
+    setCookie(res, 'accessToken', accessToken);
+    
+    res.status(200).json({
+      message: "Login successful",
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email
+      }
+    });
+
+  } catch (error) {
+   return next(error); 
+  }
+}; 
