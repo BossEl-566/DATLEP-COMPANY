@@ -1,6 +1,8 @@
 import crypto from 'crypto';
+import { Request, Response, NextFunction } from 'express';
 import { ValidationError } from '../../../../packages/error-handler';
 import redis from '../../../../packages/libs/redis';
+import { User } from '@datlep/database';
 
 import { sendEmail } from './sendMail';
 
@@ -74,3 +76,43 @@ export const verifyOtp = async (email: string, otp: string, next: Function) => {
     };
     await redis.del(`otp:${email}`, failedAttemptsKey);
 }
+
+export const handleForgotPassword = async (req: Request, res: Response, next: NextFunction, userType: 'user' | 'seller'
+    ) => {
+        try {
+          const { email } = req.body;
+          if (!email) {
+            throw next(new ValidationError('Email is required'));
+          }  
+          //Find user/seller in DB
+            const user = await User.findOne({ email }).lean();
+            if (!user) {
+              return next(new ValidationError(`${userType } with this email does not exist`));
+            }
+
+        // Check OTP restrictions
+        await checkOtpRestriction(email, next);
+        await trackOtpRequest(email, next);
+        await sendOtp(user.name, email, 'forgot-password-mail');
+        res.status(200).json({
+            message: 'OTP sent to email for password reset'
+        });
+        } catch (error) {
+         return next(error);   
+        }
+    };
+
+export const verifyForgotPasswordOtp = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { email, otp } = req.body;
+        if (!email || !otp) {
+            throw new ValidationError("Email and OTP are required");
+        }
+        await verifyOtp(email, otp, next);
+        res.status(200).json({
+            message: 'OTP verified successfully'
+        });
+    } catch (error) {
+       return next(error); 
+    }
+};

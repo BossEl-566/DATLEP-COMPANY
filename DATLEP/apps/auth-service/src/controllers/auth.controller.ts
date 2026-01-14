@@ -2,9 +2,11 @@ import { Request, Response, NextFunction } from "express";
 import { AuthenticationError, ValidationError } from "../../../../packages/error-handler";
 import {
   checkOtpRestriction,
+  handleForgotPassword,
   sendOtp,
   trackOtpRequest,
   validateRegistrationData,
+  verifyForgotPasswordOtp,
   verifyOtp
 } from "../utils/auth.helper";
 import { User } from "@datlep/database";
@@ -123,3 +125,51 @@ export const loginUser = async (
    return next(error); 
   }
 }; 
+
+//Forgot Password
+export const userForgotPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+ await handleForgotPassword(req, res, next, 'user');
+}
+
+//Verify for Reset OTP
+export const verifyUserForgotPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  await verifyForgotPasswordOtp(req, res, next);
+}
+
+// Reset Password
+export const resetUserPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email, newPassword } = req.body;
+    if (!email || !newPassword) {
+      return next(new ValidationError("Email and new password are required"));
+    }
+    const user = await User.findOne({ email });
+    if (!user) {
+      return next(new ValidationError("User with this email does not exist"));
+    }
+    //compare new password with old password
+    const isSamePassword = await bcrypt.compare(newPassword, user.password!);
+    if (isSamePassword) {
+      return next(new ValidationError("New password cannot be the same as the old password"));
+    }
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await User.updateOne({ email }, { password: hashedPassword });
+    res.status(200).json({
+      message: "Password reset successfully"
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
