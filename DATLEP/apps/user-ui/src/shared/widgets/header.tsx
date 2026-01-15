@@ -1,19 +1,26 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Search, MapPin, ChevronDown, ShoppingCart, User, Menu, X, Bell, HelpCircle } from 'lucide-react';
+import { Search, MapPin, ChevronDown, ShoppingCart, User, Menu, X, Bell, HelpCircle, Tag, Truck, Shield } from 'lucide-react';
 import ChartIcon from '../../assets/svgs/ChartIcon';
 import WishlistIcon from '../../assets/svgs/WishlistIcon';
 import BespokeIcon from '../../assets/svgs/BespokeIcon';
+import logo from '../../assets/images/datlep-logo.png';
 
 function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [activeMode, setActiveMode] = useState('marketplace'); // 'marketplace' or 'bespoke'
+  const [activeMode, setActiveMode] = useState('marketplace');
   const [cartItems] = useState(3);
   const [wishlistItems] = useState(5);
   const [chartItems] = useState(2);
   const [currentLocation, setCurrentLocation] = useState('Lagos, Nigeria');
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [headerHeight, setHeaderHeight] = useState(0);
+  const [showCompactHeader, setShowCompactHeader] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  
+  const headerRef = React.useRef<HTMLElement>(null);
 
   const locations = [
     'Lagos, Nigeria',
@@ -24,30 +31,205 @@ function Header() {
     'Johannesburg, South Africa'
   ];
 
-  return (
-    <header className="sticky top-0 z-50 bg-white shadow-md border-b border-gray-100">
+  useEffect(() => {
+    // Check if mobile on mount and resize
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024); // lg breakpoint
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    // Measure header height once component mounts
+    if (headerRef.current) {
+      setHeaderHeight(headerRef.current.offsetHeight);
+    }
+
+    let lastScrollY = window.scrollY;
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY;
+          
+          // Show compact header when scrolled past original header position
+          if (currentScrollY > headerHeight * 0.8) {
+            setShowCompactHeader(true);
+          } else {
+            setShowCompactHeader(false);
+          }
+          
+          // For hiding/showing based on scroll direction
+          if (currentScrollY > lastScrollY && currentScrollY > 100) {
+            // Scrolling down - hide compact header
+            setIsScrolled(true);
+          } else if (currentScrollY < lastScrollY) {
+            // Scrolling up - show compact header
+            setIsScrolled(false);
+          }
+          
+          lastScrollY = currentScrollY;
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', checkMobile);
+    };
+  }, [headerHeight]);
+
+  // Account dropdown content
+  const AccountDropdown = () => (
+    <div className="absolute top-full right-0 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+      <div className="p-5">
+        <div className="mb-4">
+          <button className="w-full bg-gradient-to-r from-blue-900 to-amber-600 text-white py-3 px-4 rounded-lg font-semibold hover:opacity-95 transition shadow-md">
+            Sign in / Register
+          </button>
+        </div>
+        <div className="space-y-3">
+          <a href="#" className="block text-gray-700 hover:text-blue-900 font-medium transition py-2 hover:bg-blue-50 px-2 rounded">Your Orders</a>
+          <a href="#" className="block text-gray-700 hover:text-blue-900 font-medium transition py-2 hover:bg-blue-50 px-2 rounded">Your Measurements</a>
+          <a href="#" className="block text-gray-700 hover:text-blue-900 font-medium transition py-2 hover:bg-blue-50 px-2 rounded">Saved Tailors</a>
+          <a href="#" className="block text-gray-700 hover:text-blue-900 font-medium transition py-2 hover:bg-blue-50 px-2 rounded">Account Settings</a>
+          <hr className="my-3 border-gray-200" />
+          <a href="#" className="block text-blue-900 font-semibold transition py-2 hover:bg-blue-50 px-2 rounded">Become a Seller</a>
+          <a href="#" className="block text-blue-900 font-semibold transition py-2 hover:bg-blue-50 px-2 rounded">Help Center</a>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Location dropdown component
+  const LocationDropdown = ({ isCompact = false }: { isCompact?: boolean }) => (
+    <div className={`absolute ${isCompact ? 'top-full left-0 mt-2' : 'top-full left-0 mt-2'} w-72 bg-white rounded-lg shadow-xl border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50`}>
+      <div className="p-4">
+        <h3 className="font-semibold text-gray-900 mb-3 text-lg">Select Your Location</h3>
+        <div className="space-y-2 max-h-60 overflow-y-auto">
+          {locations.map((location) => (
+            <button
+              key={location}
+              onClick={() => setCurrentLocation(location)}
+              className={`w-full text-left px-4 py-3 rounded-md transition flex items-center ${currentLocation === location 
+                ? 'bg-blue-50 text-blue-900 border-l-4 border-amber-500' 
+                : 'hover:bg-gray-50 hover:border-l-4 hover:border-gray-300'}`}
+            >
+              <MapPin className="w-4 h-4 mr-3 text-gray-500" />
+              {location}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  // Mobile Menu Component
+  const MobileMenu = () => (
+    <div className="lg:hidden bg-white border-t border-gray-200 shadow-xl">
+      <div className="max-w-8xl mx-auto px-4 py-6">
+        <div className="space-y-1">
+          <div className="flex items-center space-x-4 mb-4">
+            <div className="flex items-center space-x-2">
+              <Shield className="w-5 h-5 text-blue-700" />
+              <span className="text-sm font-medium">Verified Tailors</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Truck className="w-5 h-5 text-amber-600" />
+              <span className="text-sm font-medium">Free Delivery</span>
+            </div>
+          </div>
+          
+          <a href="#" className="block text-gray-800 hover:text-blue-900 font-semibold py-3 px-4 hover:bg-blue-50 rounded-lg transition">Fashion</a>
+          <a href="#" className="block text-gray-800 hover:text-blue-900 font-semibold py-3 px-4 hover:bg-blue-50 rounded-lg transition">Tailors</a>
+          <a href="#" className="block text-gray-800 hover:text-blue-900 font-semibold py-3 px-4 hover:bg-blue-50 rounded-lg transition">Shoemakers</a>
+          <a href="#" className="block text-gray-800 hover:text-blue-900 font-semibold py-3 px-4 hover:bg-blue-50 rounded-lg transition">Fabrics</a>
+          <a href="#" className="block text-gray-800 hover:text-blue-900 font-semibold py-3 px-4 hover:bg-blue-50 rounded-lg transition">Thrift Stores</a>
+          <a href="#" className="block text-gray-800 hover:text-blue-900 font-semibold py-3 px-4 hover:bg-blue-50 rounded-lg transition">Repair Services</a>
+          <a href="#" className="block text-blue-900 font-semibold py-3 px-4 bg-blue-50 rounded-lg mt-4 flex items-center">
+            <BespokeIcon className="w-5 h-5 mr-3 text-amber-600" />
+            Custom Orders
+          </a>
+          
+          {/* Location selection in mobile menu */}
+          <div className="pt-6 border-t mt-6">
+            <div className="mb-4">
+              <h4 className="font-semibold text-gray-900 mb-2">Change Location</h4>
+              <div className="space-y-2">
+                {locations.slice(0, 4).map((location) => (
+                  <button
+                    key={location}
+                    onClick={() => {
+                      setCurrentLocation(location);
+                      setIsMenuOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2.5 rounded-md transition flex items-center ${currentLocation === location 
+                      ? 'bg-blue-50 text-blue-900 border-l-4 border-amber-500' 
+                      : 'hover:bg-gray-50'}`}
+                  >
+                    <MapPin className="w-4 h-4 mr-3 text-gray-500" />
+                    {location}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            <a href="#" className="block text-gray-700 hover:text-blue-900 font-medium py-3 px-4 hover:bg-blue-50 rounded-lg transition">Your Orders</a>
+            <a href="#" className="block text-gray-700 hover:text-blue-900 font-medium py-3 px-4 hover:bg-blue-50 rounded-lg transition">Wishlist</a>
+            <a href="#" className="block text-gray-700 hover:text-blue-900 font-medium py-3 px-4 hover:bg-blue-50 rounded-lg transition">Compare Items</a>
+            <a href="#" className="block text-gray-700 hover:text-blue-900 font-medium py-3 px-4 hover:bg-blue-50 rounded-lg transition">Account</a>
+            <div className="flex space-x-3 mt-4">
+              <select className="flex-1 bg-gray-50 border border-gray-300 text-gray-700 text-sm rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                <option value="en">English</option>
+                <option value="fr">French</option>
+                <option value="sw">Swahili</option>
+              </select>
+              <select className="flex-1 bg-gray-50 border border-gray-300 text-gray-700 text-sm rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                <option value="ngn">NGN</option>
+                <option value="usd">USD</option>
+                <option value="ghs">GHS</option>
+              </select>
+            </div>
+            <button className="w-full mt-4 bg-gradient-to-r from-blue-900 to-amber-600 text-white py-3 px-4 rounded-lg font-semibold hover:opacity-95 transition">
+              Sign in / Register
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Main header component (scrolls away normally)
+  const MainHeader = () => (
+    <header ref={headerRef} className="relative bg-white shadow-lg border-b border-gray-200">
       {/* Top Navigation */}
-      <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white py-1 px-4">
-        <div className="max-w-7xl mx-auto flex justify-between items-center text-sm">
-          <div className="flex items-center space-x-4">
+      <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-amber-600 text-white py-2 px-4">
+        <div className="max-w-8xl mx-auto flex flex-col md:flex-row justify-between items-center text-sm">
+          <div className="flex items-center space-x-4 mb-2 md:mb-0">
             <span className="flex items-center">
-              <Bell className="w-4 h-4 mr-1" />
+              <Bell className="w-4 h-4 mr-2 text-amber-300" />
               New: Custom Tailoring in 7 Days!
             </span>
             <span className="hidden md:flex items-center">
-              <HelpCircle className="w-4 h-4 mr-1" />
+              <HelpCircle className="w-4 h-4 mr-2 text-amber-300" />
               Need help? Chat with us
             </span>
           </div>
-          <div className="flex items-center space-x-4">
-            <button className="hover:text-purple-200 transition">Sell on DATLEP</button>
-            <button className="hover:text-purple-200 transition">Become a Creator</button>
+          <div className="flex items-center space-x-6">
+            <button className="hover:text-amber-300 transition text-sm font-medium">Sell on DATLEP</button>
+            <button className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-1 rounded-md transition font-medium">
+              Become a Creator
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Main Header */}
-      <div className="max-w-7xl mx-auto px-4">
+      {/* Main Header - First Row */}
+      <div className="max-w-8xl mx-auto px-4">
         <div className="flex items-center justify-between py-3">
           {/* Logo */}
           <div className="flex items-center space-x-4">
@@ -58,262 +240,496 @@ function Header() {
               {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
             
-            <div className="flex items-center space-x-2">
-              <div className="relative w-10 h-10">
+            <div className="flex items-center space-x-3">
+              <div className="relative w-12 h-12">
                 <Image
-                  src="/assets/images/datlep-logo.png"
+                  src={logo}
                   alt="DATLEP Logo"
-                  width={40}
-                  height={40}
+                  width={48}
+                  height={48}
                   className="object-contain"
+                  priority
                 />
               </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                DATLEP
-              </span>
+              <div className="flex flex-col">
+                <span className="text-2xl font-bold bg-gradient-to-r from-blue-900 to-amber-600 bg-clip-text text-transparent">
+                  DATLEP
+                </span>
+                <span className="text-xs text-gray-500 hidden md:block">Craftsmanship Meets Technology</span>
+              </div>
             </div>
 
             {/* Mode Switch */}
-            <div className="hidden lg:flex items-center space-x-2 ml-6">
+            <div className="hidden lg:flex items-center space-x-2 ml-8">
               <button
                 onClick={() => setActiveMode('marketplace')}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${activeMode === 'marketplace' 
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg' 
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all flex items-center ${activeMode === 'marketplace' 
+                  ? 'bg-blue-900 text-white shadow-md' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
               >
+                <ShoppingCart className="w-4 h-4 mr-2" />
                 Marketplace
               </button>
               <button
                 onClick={() => setActiveMode('bespoke')}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center ${activeMode === 'bespoke' 
-                  ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-lg' 
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all flex items-center ${activeMode === 'bespoke' 
+                  ? 'bg-amber-600 text-white shadow-md' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
               >
-                <BespokeIcon className="w-4 h-4 mr-2" />
+                <BespokeIcon className="w-5 h-5 mr-2" />
                 Bespoke
               </button>
             </div>
           </div>
 
           {/* Location Selector */}
-          <div className="hidden lg:flex flex-1 max-w-xs mx-4">
-            <div className="relative group">
-              <div className="flex items-center space-x-2 px-4 py-2 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition">
-                <MapPin className="w-5 h-5 text-purple-600" />
+          <div className="hidden lg:flex flex-1 max-w-sm mx-6">
+            <div className="relative group w-full">
+              <div className="flex items-center space-x-3 px-4 py-3 bg-blue-50 rounded-lg hover:bg-blue-100 cursor-pointer transition border border-blue-100">
+                <MapPin className="w-5 h-5 text-blue-700" />
                 <div className="flex flex-col">
-                  <span className="text-xs text-gray-500">Deliver to</span>
+                  <span className="text-xs text-gray-600">Deliver to</span>
                   <div className="flex items-center">
-                    <span className="font-medium text-sm">{currentLocation}</span>
-                    <ChevronDown className="w-4 h-4 ml-1" />
+                    <span className="font-semibold text-sm text-blue-900">{currentLocation}</span>
+                    <ChevronDown className="w-4 h-4 ml-2 text-blue-700" />
                   </div>
                 </div>
               </div>
-              
-              {/* Location Dropdown */}
-              <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                <div className="p-4">
-                  <h3 className="font-semibold text-gray-900 mb-3">Select Location</h3>
-                  <div className="space-y-2">
-                    {locations.map((location) => (
-                      <button
-                        key={location}
-                        onClick={() => setCurrentLocation(location)}
-                        className={`w-full text-left px-3 py-2 rounded-md transition ${currentLocation === location 
-                          ? 'bg-purple-50 text-purple-700' 
-                          : 'hover:bg-gray-50'}`}
-                      >
-                        {location}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+              <LocationDropdown />
+            </div>
+          </div>
+
+          {/* Right Navigation */}
+          <div className="flex items-center space-x-5 lg:space-x-6">
+            {/* Quick Actions */}
+            <div className="hidden lg:flex items-center space-x-4">
+              <div className="relative group">
+                <button className="flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-blue-900 transition p-2">
+                  <Tag className="w-4 h-4" />
+                  <span>Deals</span>
+                </button>
               </div>
+            </div>
+
+            {/* Chart */}
+            <div className="relative group">
+              <button className="p-3 rounded-xl hover:bg-blue-50 transition relative border border-transparent hover:border-blue-100">
+                <ChartIcon className="w-7 h-7 text-blue-800" />
+                {chartItems > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center font-bold border-2 border-white">
+                    {chartItems}
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {/* Wishlist */}
+            <div className="relative group hidden lg:block">
+              <button className="p-3 rounded-xl hover:bg-blue-50 transition relative border border-transparent hover:border-blue-100">
+                <WishlistIcon className="w-7 h-7 text-blue-800" />
+                {wishlistItems > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center font-bold border-2 border-white">
+                    {wishlistItems}
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {/* Cart */}
+            <div className="relative group">
+              <button className="p-3 rounded-xl hover:bg-blue-50 transition relative border border-transparent hover:border-blue-100">
+                <ShoppingCart className="w-7 h-7 text-blue-800" />
+                {cartItems > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-gradient-to-r from-blue-900 to-amber-600 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center font-bold border-2 border-white">
+                    {cartItems}
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {/* Account */}
+            <div className="relative group">
+              <button className="flex items-center space-x-3 p-2 rounded-xl hover:bg-blue-50 transition">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-900 to-amber-600 flex items-center justify-center shadow-md">
+                  <User className="w-5 h-5 text-white" />
+                </div>
+                <div className="hidden lg:block text-left">
+                  <div className="text-sm font-semibold text-blue-900">Hello, Sign in</div>
+                  <div className="text-xs text-gray-600">Account & Orders</div>
+                </div>
+              </button>
+              <AccountDropdown />
+            </div>
+          </div>
+        </div>
+
+        {/* Second Row - Search Bar with Features */}
+        <div className="hidden lg:flex items-center justify-between py-3 border-t border-gray-100">
+          {/* Features */}
+          <div className="flex items-center space-x-6">
+            <div className="flex items-center space-x-2 text-sm font-medium text-gray-700">
+              <Shield className="w-5 h-5 text-blue-700" />
+              <span>Verified Tailors</span>
+            </div>
+            <div className="flex items-center space-x-2 text-sm font-medium text-gray-700">
+              <Truck className="w-5 h-5 text-amber-600" />
+              <span>Free Delivery</span>
+            </div>
+            <div className="flex items-center space-x-2 text-sm font-medium text-gray-700">
+              <Tag className="w-5 h-5 text-red-500" />
+              <span>Flash Sales</span>
             </div>
           </div>
 
           {/* Search Bar */}
-          <div className="hidden lg:flex flex-1 max-w-2xl">
+          <div className="flex-1 max-w-2xl mx-8">
             <div className="relative w-full">
               <input
                 type="text"
                 placeholder={`Search for ${activeMode === 'bespoke' ? 'tailors, fabrics, measurements...' : 'fashion, thrift stores, repair...'}`}
-                className="w-full px-4 py-3 pl-12 rounded-full border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition"
+                className="w-full px-6 py-3.5 pl-14 rounded-xl border-2 border-gray-300 focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none transition text-base placeholder-gray-500"
               />
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <button className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-2 rounded-full hover:opacity-90 transition">
+              <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+              <button className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-blue-900 to-amber-600 text-white px-8 py-2.5 rounded-lg hover:opacity-95 transition font-medium text-sm">
                 Search
               </button>
             </div>
           </div>
 
-          {/* Right Navigation */}
-          <div className="flex items-center space-x-4 lg:space-x-6">
-            {/* Chart */}
-            <div className="relative group">
-              <button className="p-2 rounded-lg hover:bg-gray-100 transition relative">
-                <ChartIcon className="w-6 h-6 text-gray-700" />
-                {chartItems > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                    {chartItems}
-                  </span>
-                )}
-              </button>
-              <div className="absolute top-full right-0 mt-2 px-3 py-1 bg-gray-900 text-white text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition">
-                Compare Items
-                <div className="absolute -top-1 right-3 w-2 h-2 bg-gray-900 transform rotate-45"></div>
-              </div>
-            </div>
-
-            {/* Wishlist */}
-            <div className="relative group hidden lg:block">
-              <button className="p-2 rounded-lg hover:bg-gray-100 transition relative">
-                <WishlistIcon className="w-6 h-6 text-gray-700" />
-                {wishlistItems > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-pink-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                    {wishlistItems}
-                  </span>
-                )}
-              </button>
-              <div className="absolute top-full right-0 mt-2 px-3 py-1 bg-gray-900 text-white text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition">
-                Wishlist
-                <div className="absolute -top-1 right-3 w-2 h-2 bg-gray-900 transform rotate-45"></div>
-              </div>
-            </div>
-
-            {/* Cart */}
-            <div className="relative group">
-              <button className="p-2 rounded-lg hover:bg-gray-100 transition relative">
-                <ShoppingCart className="w-6 h-6 text-gray-700" />
-                {cartItems > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                    {cartItems}
-                  </span>
-                )}
-              </button>
-              <div className="absolute top-full right-0 mt-2 px-3 py-1 bg-gray-900 text-white text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition">
-                Cart
-                <div className="absolute -top-1 right-3 w-2 h-2 bg-gray-900 transform rotate-45"></div>
-              </div>
-            </div>
-
-            {/* Account */}
-            <div className="relative group">
-              <button className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 transition">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 flex items-center justify-center">
-                  <User className="w-5 h-5 text-white" />
-                </div>
-                <div className="hidden lg:block text-left">
-                  <div className="text-sm font-medium">Hello, Sign in</div>
-                  <div className="text-xs text-gray-600">Account & Orders</div>
-                </div>
-                <ChevronDown className="hidden lg:block w-4 h-4" />
-              </button>
-              
-              {/* Account Dropdown */}
-              <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                <div className="p-4">
-                  <div className="mb-4">
-                    <button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-2 px-4 rounded-lg font-medium hover:opacity-90 transition">
-                      Sign in
-                    </button>
-                  </div>
-                  <div className="space-y-3">
-                    <a href="#" className="block hover:text-purple-600 transition">Your Orders</a>
-                    <a href="#" className="block hover:text-purple-600 transition">Your Measurements</a>
-                    <a href="#" className="block hover:text-purple-600 transition">Saved Tailors</a>
-                    <a href="#" className="block hover:text-purple-600 transition">Account Settings</a>
-                    <hr className="my-2" />
-                    <a href="#" className="block hover:text-purple-600 transition">Become a Seller</a>
-                    <a href="#" className="block hover:text-purple-600 transition">Help Center</a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Search Bar */}
-        <div className="lg:hidden mb-3">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search on DATLEP..."
-              className="w-full px-4 py-3 pl-12 rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition"
-            />
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          </div>
-          
-          {/* Mobile Location & Mode */}
-          <div className="flex items-center justify-between mt-3">
-            <div className="flex items-center space-x-2">
-              <MapPin className="w-5 h-5 text-purple-600" />
-              <span className="font-medium text-sm">{currentLocation}</span>
-              <ChevronDown className="w-4 h-4" />
-            </div>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => setActiveMode('marketplace')}
-                className={`px-3 py-1 rounded-full text-xs font-medium ${activeMode === 'marketplace' 
-                  ? 'bg-purple-600 text-white' 
-                  : 'bg-gray-100 text-gray-600'}`}
-              >
-                Marketplace
-              </button>
-              <button
-                onClick={() => setActiveMode('bespoke')}
-                className={`px-3 py-1 rounded-full text-xs font-medium flex items-center ${activeMode === 'bespoke' 
-                  ? 'bg-pink-600 text-white' 
-                  : 'bg-gray-100 text-gray-600'}`}
-              >
-                <BespokeIcon className="w-3 h-3 mr-1" />
-                Bespoke
-              </button>
-            </div>
+          {/* Language/Currency */}
+          <div className="flex items-center space-x-4">
+            <select className="bg-gray-50 border border-gray-300 text-gray-700 text-sm rounded-lg px-3 py-1.5 focus:ring-blue-500 focus:border-blue-500 outline-none">
+              <option value="en">EN</option>
+              <option value="fr">FR</option>
+              <option value="sw">SW</option>
+            </select>
+            <select className="bg-gray-50 border border-gray-300 text-gray-700 text-sm rounded-lg px-3 py-1.5 focus:ring-blue-500 focus:border-blue-500 outline-none">
+              <option value="ngn">₦ NGN</option>
+              <option value="usd">$ USD</option>
+              <option value="ghs">₵ GHS</option>
+              <option value="kes">KSh KES</option>
+            </select>
           </div>
         </div>
 
         {/* Categories Navigation */}
-        <div className="hidden lg:flex items-center justify-between py-2 border-t border-gray-100">
-          <div className="flex items-center space-x-6">
-            <a href="#" className="text-gray-700 hover:text-purple-600 font-medium transition">Fashion</a>
-            <a href="#" className="text-gray-700 hover:text-purple-600 font-medium transition">Tailors</a>
-            <a href="#" className="text-gray-700 hover:text-purple-600 font-medium transition">Shoemakers</a>
-            <a href="#" className="text-gray-700 hover:text-purple-600 font-medium transition">Fabrics</a>
-            <a href="#" className="text-gray-700 hover:text-purple-600 font-medium transition">Thrift Stores</a>
-            <a href="#" className="text-gray-700 hover:text-purple-600 font-medium transition">Repair Services</a>
-            <a href="#" className="text-purple-600 font-medium flex items-center">
-              <BespokeIcon className="w-4 h-4 mr-1" />
+        <div className="hidden lg:flex items-center justify-between py-3 border-t border-gray-200 bg-gradient-to-r from-blue-50 to-amber-50/30 px-4 rounded-lg mt-2">
+          <div className="flex items-center space-x-8">
+            <a href="#" className="text-gray-800 hover:text-blue-900 font-semibold transition flex items-center group">
+              <div className="w-2 h-2 bg-amber-500 rounded-full mr-2 group-hover:scale-125 transition"></div>
+              Fashion
+            </a>
+            <a href="#" className="text-gray-800 hover:text-blue-900 font-semibold transition flex items-center group">
+              <div className="w-2 h-2 bg-amber-500 rounded-full mr-2 group-hover:scale-125 transition"></div>
+              Tailors
+            </a>
+            <a href="#" className="text-gray-800 hover:text-blue-900 font-semibold transition flex items-center group">
+              <div className="w-2 h-2 bg-amber-500 rounded-full mr-2 group-hover:scale-125 transition"></div>
+              Shoemakers
+            </a>
+            <a href="#" className="text-gray-800 hover:text-blue-900 font-semibold transition flex items-center group">
+              <div className="w-2 h-2 bg-amber-500 rounded-full mr-2 group-hover:scale-125 transition"></div>
+              Fabrics
+            </a>
+            <a href="#" className="text-gray-800 hover:text-blue-900 font-semibold transition flex items-center group">
+              <div className="w-2 h-2 bg-amber-500 rounded-full mr-2 group-hover:scale-125 transition"></div>
+              Thrift Stores
+            </a>
+            <a href="#" className="text-gray-800 hover:text-blue-900 font-semibold transition flex items-center group">
+              <div className="w-2 h-2 bg-amber-500 rounded-full mr-2 group-hover:scale-125 transition"></div>
+              Repair Services
+            </a>
+            <a href="#" className="text-blue-900 font-semibold flex items-center bg-white px-4 py-2 rounded-lg shadow-sm border border-amber-200 hover:shadow-md transition">
+              <BespokeIcon className="w-5 h-5 mr-2 text-amber-600" />
               Custom Orders
             </a>
           </div>
-          <div className="text-sm text-gray-600">
-            {activeMode === 'bespoke' ? '✨ Book a tailor today!' : '🎉 New arrivals daily!'}
+          <div className="text-sm font-medium text-blue-900 bg-white px-4 py-2 rounded-lg border border-blue-100">
+            {activeMode === 'bespoke' ? 'Book a tailor today!' : 'New arrivals daily!'}
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Search Bar & Location */}
+      <div className="lg:hidden px-4 pb-4">
+        <div className="relative mb-3">
+          <input
+            type="text"
+            placeholder="Search on DATLEP..."
+            className="w-full px-5 py-4 pl-14 rounded-xl border-2 border-gray-300 focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none transition text-base"
+          />
+          <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-500 w-6 h-6" />
+          <button className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-blue-900 to-amber-600 text-white px-6 py-2.5 rounded-lg hover:opacity-95 transition font-medium">
+            Go
+          </button>
+        </div>
+        
+        {/* Mobile Location & Mode */}
+        <div className="flex items-center justify-between">
+          <div className="relative group">
+            <div className="flex items-center space-x-2 px-3 py-2 bg-blue-50 rounded-lg hover:bg-blue-100 cursor-pointer transition">
+              <MapPin className="w-5 h-5 text-blue-700" />
+              <span className="font-semibold text-sm text-blue-900">{currentLocation}</span>
+              <ChevronDown className="w-4 h-4 text-blue-700" />
+            </div>
+            {/* Mobile Location Dropdown */}
+            <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+              <div className="p-4">
+                <h3 className="font-semibold text-gray-900 mb-3">Select Location</h3>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {locations.map((location) => (
+                    <button
+                      key={location}
+                      onClick={() => setCurrentLocation(location)}
+                      className={`w-full text-left px-4 py-3 rounded-md transition flex items-center ${currentLocation === location 
+                        ? 'bg-blue-50 text-blue-900 border-l-4 border-amber-500' 
+                        : 'hover:bg-gray-50'}`}
+                    >
+                      <MapPin className="w-4 h-4 mr-3 text-gray-500" />
+                      {location}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setActiveMode('marketplace')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium ${activeMode === 'marketplace' 
+                ? 'bg-blue-900 text-white' 
+                : 'bg-gray-100 text-gray-700'}`}
+            >
+              Marketplace
+            </button>
+            <button
+              onClick={() => setActiveMode('bespoke')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center ${activeMode === 'bespoke' 
+                ? 'bg-amber-600 text-white' 
+                : 'bg-gray-100 text-gray-700'}`}
+            >
+              <BespokeIcon className="w-4 h-4 mr-1" />
+              Bespoke
+            </button>
           </div>
         </div>
       </div>
 
       {/* Mobile Menu */}
-      {isMenuOpen && (
-        <div className="lg:hidden bg-white border-t border-gray-100 shadow-lg">
-          <div className="max-w-7xl mx-auto px-4 py-4">
-            <div className="space-y-4">
-              <a href="#" className="block text-gray-700 hover:text-purple-600 font-medium py-2">Fashion</a>
-              <a href="#" className="block text-gray-700 hover:text-purple-600 font-medium py-2">Tailors</a>
-              <a href="#" className="block text-gray-700 hover:text-purple-600 font-medium py-2">Shoemakers</a>
-              <a href="#" className="block text-gray-700 hover:text-purple-600 font-medium py-2">Fabrics</a>
-              <a href="#" className="block text-gray-700 hover:text-purple-600 font-medium py-2">Thrift Stores</a>
-              <a href="#" className="block text-gray-700 hover:text-purple-600 font-medium py-2">Repair Services</a>
-              <div className="pt-4 border-t">
-                <a href="#" className="block text-gray-700 hover:text-purple-600 py-2">Your Orders</a>
-                <a href="#" className="block text-gray-700 hover:text-purple-600 py-2">Wishlist</a>
-                <a href="#" className="block text-gray-700 hover:text-purple-600 py-2">Compare Items</a>
-                <a href="#" className="block text-gray-700 hover:text-purple-600 py-2">Account</a>
+      {isMenuOpen && <MobileMenu />}
+    </header>
+  );
+
+  // Compact header for desktop (shows when scrolled past original header)
+  const DesktopCompactHeader = () => (
+    <header className={`fixed top-0 left-0 right-0 z-50 bg-white shadow-lg border-b border-gray-200 transition-transform duration-300 ${
+      isScrolled ? '-translate-y-full' : 'translate-y-0'
+    }`}>
+      <div className="max-w-8xl mx-auto px-4">
+        <div className="flex items-center justify-between py-3">
+          {/* Logo & Mode Switch - Compact */}
+          <div className="flex items-center space-x-4">
+            <div className="relative w-10 h-10">
+              <Image
+                src={logo}
+                alt="DATLEP Logo"
+                width={40}
+                height={40}
+                className="object-contain"
+              />
+            </div>
+            <span className="text-xl font-bold bg-gradient-to-r from-blue-900 to-amber-600 bg-clip-text text-transparent">
+              DATLEP
+            </span>
+            
+            {/* Mode Switch - Compact */}
+            <div className="flex items-center space-x-1 ml-4">
+              <button
+                onClick={() => setActiveMode('marketplace')}
+                className={`px-4 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center ${activeMode === 'marketplace' 
+                  ? 'bg-blue-900 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              >
+                <ShoppingCart className="w-3 h-3 mr-1" />
+                Marketplace
+              </button>
+              <button
+                onClick={() => setActiveMode('bespoke')}
+                className={`px-4 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center ${activeMode === 'bespoke' 
+                  ? 'bg-amber-600 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              >
+                <BespokeIcon className="w-4 h-4 mr-1" />
+                Bespoke
+              </button>
+            </div>
+          </div>
+
+          {/* Search Bar - Compact */}
+          <div className="flex-1 max-w-lg mx-6">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder={`Search ${activeMode === 'bespoke' ? 'tailors...' : 'fashion...'}`}
+                className="w-full px-4 py-2 pl-10 rounded-lg border border-gray-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none transition text-sm"
+              />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" />
+              <button className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-blue-900 to-amber-600 text-white px-4 py-1.5 rounded-md hover:opacity-95 transition text-xs font-medium">
+                Search
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Actions - Compact */}
+          <div className="flex items-center space-x-4">
+            {/* Quick Features */}
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-1 text-xs font-medium text-gray-700">
+                <Shield className="w-4 h-4 text-blue-700" />
+                <span className="hidden xl:inline">Verified</span>
               </div>
+              <div className="flex items-center space-x-1 text-xs font-medium text-gray-700">
+                <Tag className="w-4 h-4 text-red-500" />
+                <span className="hidden xl:inline">Deals</span>
+              </div>
+            </div>
+
+            {/* Chart */}
+            <div className="relative group">
+              <button className="p-2 hover:bg-blue-50 rounded-lg transition relative">
+                <ChartIcon className="w-5 h-5 text-blue-800" />
+                {chartItems > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold">
+                    {chartItems}
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {/* Wishlist */}
+            <div className="relative group">
+              <button className="p-2 hover:bg-blue-50 rounded-lg transition relative">
+                <WishlistIcon className="w-5 h-5 text-blue-800" />
+                {wishlistItems > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold">
+                    {wishlistItems}
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {/* Cart */}
+            <div className="relative group">
+              <button className="p-2 hover:bg-blue-50 rounded-lg transition relative">
+                <ShoppingCart className="w-5 h-5 text-blue-800" />
+                {cartItems > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-gradient-to-r from-blue-900 to-amber-600 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold">
+                    {cartItems}
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {/* Account - Compact with Dropdown */}
+            <div className="relative group">
+              <button className="p-2 hover:bg-blue-50 rounded-lg transition">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-900 to-amber-600 flex items-center justify-center">
+                  <User className="w-4 h-4 text-white" />
+                </div>
+              </button>
+              <AccountDropdown />
+            </div>
+
+            {/* Location - Compact with Dropdown */}
+            <div className="relative group">
+              <button className="flex items-center space-x-1 px-3 py-2 bg-blue-50 rounded-lg hover:bg-blue-100 transition">
+                <MapPin className="w-4 h-4 text-blue-700" />
+                <span className="text-xs font-semibold text-blue-900 hidden xl:inline">{currentLocation.split(',')[0]}</span>
+                <ChevronDown className="w-3 h-3 text-blue-700" />
+              </button>
+              <LocationDropdown isCompact={true} />
             </div>
           </div>
         </div>
-      )}
+      </div>
     </header>
+  );
+
+  // Mobile Compact Header (simpler version)
+  const MobileCompactHeader = () => (
+    <header className={`fixed top-0 left-0 right-0 z-50 bg-white shadow-lg border-b border-gray-200 transition-transform duration-300 ${
+      isScrolled ? '-translate-y-full' : 'translate-y-0'
+    }`}>
+      <div className="px-4">
+        <div className="flex items-center justify-between py-3">
+          {/* Mobile Hamburger & Logo */}
+          <div className="flex items-center space-x-3">
+            <button 
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="p-2"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+            <div className="relative w-8 h-8">
+              <Image
+                src={logo}
+                alt="DATLEP Logo"
+                width={32}
+                height={32}
+                className="object-contain"
+              />
+            </div>
+            <span className="text-lg font-bold bg-gradient-to-r from-blue-900 to-amber-600 bg-clip-text text-transparent">
+              DATLEP
+            </span>
+          </div>
+
+          {/* Mobile Quick Actions */}
+          <div className="flex items-center space-x-3">
+            {/* Mode Indicator */}
+            <div className={`px-2 py-1 rounded-md text-xs font-semibold ${activeMode === 'marketplace' ? 'bg-blue-100 text-blue-900' : 'bg-amber-100 text-amber-900'}`}>
+              {activeMode === 'marketplace' ? 'Market' : 'Bespoke'}
+            </div>
+
+            {/* Location - Mobile Compact */}
+            <div className="relative group">
+              <button className="flex items-center space-x-1 px-2 py-1.5 bg-blue-50 rounded-lg hover:bg-blue-100 transition">
+                <MapPin className="w-4 h-4 text-blue-700" />
+                <span className="text-xs font-semibold text-blue-900 hidden sm:inline">{currentLocation.split(',')[0]}</span>
+              </button>
+            </div>
+
+            {/* Search Button */}
+            <button className="p-2 hover:bg-blue-50 rounded-lg transition">
+              <Search className="w-5 h-5 text-blue-800" />
+            </button>
+
+            {/* Cart */}
+            <div className="relative">
+              <button className="p-2 hover:bg-blue-50 rounded-lg transition relative">
+                <ShoppingCart className="w-5 h-5 text-blue-800" />
+                {cartItems > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-gradient-to-r from-blue-900 to-amber-600 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold">
+                    {cartItems}
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+
+  return (
+    <>
+      <MainHeader />
+      {showCompactHeader && (
+        <>
+          {isMobile ? <MobileCompactHeader /> : <DesktopCompactHeader />}
+        </>
+      )}
+    </>
   );
 }
 

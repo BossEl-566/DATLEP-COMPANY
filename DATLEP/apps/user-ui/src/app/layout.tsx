@@ -26,9 +26,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <Header />
       <body className={`${poppins.variable} ${roboto.variable} font-sans`}>
-        {children}</body>
+        <Header />
+        <main className="min-h-screen">
+          {children}
+        </main>
+      </body>
     </html>
   )
 }
