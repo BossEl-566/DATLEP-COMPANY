@@ -17,6 +17,9 @@
     },
     {
       "path": "./database"
+    },
+    {
+      "path": "./apps/user-ui"
     }
   ]
 }
