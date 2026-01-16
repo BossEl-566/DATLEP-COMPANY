@@ -6,11 +6,12 @@ import { Search, MapPin, ChevronDown, ShoppingCart, User, Menu, X, Bell, HelpCir
 import ChartIcon from '../../assets/svgs/ChartIcon';
 import WishlistIcon from '../../assets/svgs/WishlistIcon';
 import BespokeIcon from '../../assets/svgs/BespokeIcon';
+import HeaderCategories from './header-button';
 import logo from '../../assets/images/datlep-logo.png';
 
 function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [activeMode, setActiveMode] = useState('marketplace');
+  const [activeMode, setActiveMode] = useState<'marketplace' | 'bespoke'>('marketplace');
   const [cartItems] = useState(3);
   const [wishlistItems] = useState(5);
   const [chartItems] = useState(2);
@@ -32,15 +33,13 @@ function Header() {
   ];
 
   useEffect(() => {
-    // Check if mobile on mount and resize
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024); // lg breakpoint
+      setIsMobile(window.innerWidth < 1024);
     };
     
     checkMobile();
     window.addEventListener('resize', checkMobile);
     
-    // Measure header height once component mounts
     if (headerRef.current) {
       setHeaderHeight(headerRef.current.offsetHeight);
     }
@@ -53,19 +52,15 @@ function Header() {
         window.requestAnimationFrame(() => {
           const currentScrollY = window.scrollY;
           
-          // Show compact header when scrolled past original header position
           if (currentScrollY > headerHeight * 0.8) {
             setShowCompactHeader(true);
           } else {
             setShowCompactHeader(false);
           }
           
-          // For hiding/showing based on scroll direction
           if (currentScrollY > lastScrollY && currentScrollY > 100) {
-            // Scrolling down - hide compact header
             setIsScrolled(true);
           } else if (currentScrollY < lastScrollY) {
-            // Scrolling up - show compact header
             setIsScrolled(false);
           }
           
@@ -83,12 +78,12 @@ function Header() {
     };
   }, [headerHeight]);
 
-  // Account dropdown content
+  // Account dropdown content (updated without gradient)
   const AccountDropdown = () => (
     <div className="absolute top-full right-0 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
       <div className="p-5">
         <div className="mb-4">
-          <button className="w-full bg-gradient-to-r from-blue-900 to-amber-600 text-white py-3 px-4 rounded-lg font-semibold hover:opacity-95 transition shadow-md">
+          <button className="w-full bg-blue-900 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-800 transition shadow-sm">
             Sign in / Register
           </button>
         </div>
@@ -144,16 +139,10 @@ function Header() {
             </div>
           </div>
           
-          <a href="#" className="block text-gray-800 hover:text-blue-900 font-semibold py-3 px-4 hover:bg-blue-50 rounded-lg transition">Fashion</a>
-          <a href="#" className="block text-gray-800 hover:text-blue-900 font-semibold py-3 px-4 hover:bg-blue-50 rounded-lg transition">Tailors</a>
-          <a href="#" className="block text-gray-800 hover:text-blue-900 font-semibold py-3 px-4 hover:bg-blue-50 rounded-lg transition">Shoemakers</a>
-          <a href="#" className="block text-gray-800 hover:text-blue-900 font-semibold py-3 px-4 hover:bg-blue-50 rounded-lg transition">Fabrics</a>
-          <a href="#" className="block text-gray-800 hover:text-blue-900 font-semibold py-3 px-4 hover:bg-blue-50 rounded-lg transition">Thrift Stores</a>
-          <a href="#" className="block text-gray-800 hover:text-blue-900 font-semibold py-3 px-4 hover:bg-blue-50 rounded-lg transition">Repair Services</a>
-          <a href="#" className="block text-blue-900 font-semibold py-3 px-4 bg-blue-50 rounded-lg mt-4 flex items-center">
-            <BespokeIcon className="w-5 h-5 mr-3 text-amber-600" />
-            Custom Orders
-          </a>
+          {/* Mobile Categories Button */}
+          <div className="mb-4">
+            <HeaderCategories activeMode={activeMode} isCompact={true} />
+          </div>
           
           {/* Location selection in mobile menu */}
           <div className="pt-6 border-t mt-6">
@@ -194,7 +183,7 @@ function Header() {
                 <option value="ghs">GHS</option>
               </select>
             </div>
-            <button className="w-full mt-4 bg-gradient-to-r from-blue-900 to-amber-600 text-white py-3 px-4 rounded-lg font-semibold hover:opacity-95 transition">
+            <button className="w-full mt-4 bg-blue-900 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-800 transition">
               Sign in / Register
             </button>
           </div>
@@ -203,10 +192,10 @@ function Header() {
     </div>
   );
 
-  // Main header component (scrolls away normally)
+  // Main header component
   const MainHeader = () => (
     <header ref={headerRef} className="relative bg-white shadow-lg border-b border-gray-200">
-      {/* Top Navigation */}
+      {/* Top Navigation - ONLY this has gradient */}
       <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-amber-600 text-white py-2 px-4">
         <div className="max-w-8xl mx-auto flex flex-col md:flex-row justify-between items-center text-sm">
           <div className="flex items-center space-x-4 mb-2 md:mb-0">
@@ -259,7 +248,7 @@ function Header() {
               </div>
             </div>
 
-            {/* Mode Switch */}
+            {/* Mode Switch - No gradients */}
             <div className="hidden lg:flex items-center space-x-2 ml-8">
               <button
                 onClick={() => setActiveMode('marketplace')}
@@ -282,21 +271,9 @@ function Header() {
             </div>
           </div>
 
-          {/* Location Selector */}
-          <div className="hidden lg:flex flex-1 max-w-sm mx-6">
-            <div className="relative group w-full">
-              <div className="flex items-center space-x-3 px-4 py-3 bg-blue-50 rounded-lg hover:bg-blue-100 cursor-pointer transition border border-blue-100">
-                <MapPin className="w-5 h-5 text-blue-700" />
-                <div className="flex flex-col">
-                  <span className="text-xs text-gray-600">Deliver to</span>
-                  <div className="flex items-center">
-                    <span className="font-semibold text-sm text-blue-900">{currentLocation}</span>
-                    <ChevronDown className="w-4 h-4 ml-2 text-blue-700" />
-                  </div>
-                </div>
-              </div>
-              <LocationDropdown />
-            </div>
+          {/* Categories Dropdown (Desktop) */}
+          <div className="hidden lg:flex mx-6">
+            <HeaderCategories activeMode={activeMode} />
           </div>
 
           {/* Right Navigation */}
@@ -335,22 +312,22 @@ function Header() {
               </button>
             </div>
 
-            {/* Cart */}
+            {/* Cart - Updated without gradient */}
             <div className="relative group">
               <button className="p-3 rounded-xl hover:bg-blue-50 transition relative border border-transparent hover:border-blue-100">
                 <ShoppingCart className="w-7 h-7 text-blue-800" />
                 {cartItems > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-gradient-to-r from-blue-900 to-amber-600 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center font-bold border-2 border-white">
+                  <span className="absolute -top-1 -right-1 bg-blue-900 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center font-bold border-2 border-white">
                     {cartItems}
                   </span>
                 )}
               </button>
             </div>
 
-            {/* Account */}
+            {/* Account - Updated without gradient */}
             <div className="relative group">
               <button className="flex items-center space-x-3 p-2 rounded-xl hover:bg-blue-50 transition">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-900 to-amber-600 flex items-center justify-center shadow-md">
+                <div className="w-10 h-10 rounded-full bg-blue-900 flex items-center justify-center shadow-md">
                   <User className="w-5 h-5 text-white" />
                 </div>
                 <div className="hidden lg:block text-left">
@@ -390,7 +367,7 @@ function Header() {
                 className="w-full px-6 py-3.5 pl-14 rounded-xl border-2 border-gray-300 focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none transition text-base placeholder-gray-500"
               />
               <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
-              <button className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-blue-900 to-amber-600 text-white px-8 py-2.5 rounded-lg hover:opacity-95 transition font-medium text-sm">
+              <button className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-blue-900 text-white px-8 py-2.5 rounded-lg hover:bg-blue-800 transition font-medium text-sm">
                 Search
               </button>
             </div>
@@ -411,43 +388,6 @@ function Header() {
             </select>
           </div>
         </div>
-
-        {/* Categories Navigation */}
-        <div className="hidden lg:flex items-center justify-between py-3 border-t border-gray-200 bg-gradient-to-r from-blue-50 to-amber-50/30 px-4 rounded-lg mt-2">
-          <div className="flex items-center space-x-8">
-            <a href="#" className="text-gray-800 hover:text-blue-900 font-semibold transition flex items-center group">
-              <div className="w-2 h-2 bg-amber-500 rounded-full mr-2 group-hover:scale-125 transition"></div>
-              Fashion
-            </a>
-            <a href="#" className="text-gray-800 hover:text-blue-900 font-semibold transition flex items-center group">
-              <div className="w-2 h-2 bg-amber-500 rounded-full mr-2 group-hover:scale-125 transition"></div>
-              Tailors
-            </a>
-            <a href="#" className="text-gray-800 hover:text-blue-900 font-semibold transition flex items-center group">
-              <div className="w-2 h-2 bg-amber-500 rounded-full mr-2 group-hover:scale-125 transition"></div>
-              Shoemakers
-            </a>
-            <a href="#" className="text-gray-800 hover:text-blue-900 font-semibold transition flex items-center group">
-              <div className="w-2 h-2 bg-amber-500 rounded-full mr-2 group-hover:scale-125 transition"></div>
-              Fabrics
-            </a>
-            <a href="#" className="text-gray-800 hover:text-blue-900 font-semibold transition flex items-center group">
-              <div className="w-2 h-2 bg-amber-500 rounded-full mr-2 group-hover:scale-125 transition"></div>
-              Thrift Stores
-            </a>
-            <a href="#" className="text-gray-800 hover:text-blue-900 font-semibold transition flex items-center group">
-              <div className="w-2 h-2 bg-amber-500 rounded-full mr-2 group-hover:scale-125 transition"></div>
-              Repair Services
-            </a>
-            <a href="#" className="text-blue-900 font-semibold flex items-center bg-white px-4 py-2 rounded-lg shadow-sm border border-amber-200 hover:shadow-md transition">
-              <BespokeIcon className="w-5 h-5 mr-2 text-amber-600" />
-              Custom Orders
-            </a>
-          </div>
-          <div className="text-sm font-medium text-blue-900 bg-white px-4 py-2 rounded-lg border border-blue-100">
-            {activeMode === 'bespoke' ? 'Book a tailor today!' : 'New arrivals daily!'}
-          </div>
-        </div>
       </div>
 
       {/* Mobile Search Bar & Location */}
@@ -459,7 +399,7 @@ function Header() {
             className="w-full px-5 py-4 pl-14 rounded-xl border-2 border-gray-300 focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none transition text-base"
           />
           <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-500 w-6 h-6" />
-          <button className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-blue-900 to-amber-600 text-white px-6 py-2.5 rounded-lg hover:opacity-95 transition font-medium">
+          <button className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-blue-900 text-white px-6 py-2.5 rounded-lg hover:bg-blue-800 transition font-medium">
             Go
           </button>
         </div>
@@ -471,26 +411,6 @@ function Header() {
               <MapPin className="w-5 h-5 text-blue-700" />
               <span className="font-semibold text-sm text-blue-900">{currentLocation}</span>
               <ChevronDown className="w-4 h-4 text-blue-700" />
-            </div>
-            {/* Mobile Location Dropdown */}
-            <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-              <div className="p-4">
-                <h3 className="font-semibold text-gray-900 mb-3">Select Location</h3>
-                <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {locations.map((location) => (
-                    <button
-                      key={location}
-                      onClick={() => setCurrentLocation(location)}
-                      className={`w-full text-left px-4 py-3 rounded-md transition flex items-center ${currentLocation === location 
-                        ? 'bg-blue-50 text-blue-900 border-l-4 border-amber-500' 
-                        : 'hover:bg-gray-50'}`}
-                    >
-                      <MapPin className="w-4 h-4 mr-3 text-gray-500" />
-                      {location}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
           </div>
           <div className="flex space-x-2">
@@ -520,7 +440,7 @@ function Header() {
     </header>
   );
 
-  // Compact header for desktop (shows when scrolled past original header)
+  // Compact header for desktop
   const DesktopCompactHeader = () => (
     <header className={`fixed top-0 left-0 right-0 z-50 bg-white shadow-lg border-b border-gray-200 transition-transform duration-300 ${
       isScrolled ? '-translate-y-full' : 'translate-y-0'
@@ -541,6 +461,11 @@ function Header() {
             <span className="text-xl font-bold bg-gradient-to-r from-blue-900 to-amber-600 bg-clip-text text-transparent">
               DATLEP
             </span>
+            
+            {/* Categories in Compact Header */}
+            <div className="hidden lg:block">
+              <HeaderCategories activeMode={activeMode} isCompact={true} />
+            </div>
             
             {/* Mode Switch - Compact */}
             <div className="flex items-center space-x-1 ml-4">
@@ -574,7 +499,7 @@ function Header() {
                 className="w-full px-4 py-2 pl-10 rounded-lg border border-gray-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none transition text-sm"
               />
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" />
-              <button className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-blue-900 to-amber-600 text-white px-4 py-1.5 rounded-md hover:opacity-95 transition text-xs font-medium">
+              <button className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-blue-900 text-white px-4 py-1.5 rounded-md hover:bg-blue-800 transition text-xs font-medium">
                 Search
               </button>
             </div>
@@ -618,12 +543,12 @@ function Header() {
               </button>
             </div>
 
-            {/* Cart */}
+            {/* Cart - Updated without gradient */}
             <div className="relative group">
               <button className="p-2 hover:bg-blue-50 rounded-lg transition relative">
                 <ShoppingCart className="w-5 h-5 text-blue-800" />
                 {cartItems > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-gradient-to-r from-blue-900 to-amber-600 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold">
+                  <span className="absolute -top-1 -right-1 bg-blue-900 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold">
                     {cartItems}
                   </span>
                 )}
@@ -633,21 +558,11 @@ function Header() {
             {/* Account - Compact with Dropdown */}
             <div className="relative group">
               <button className="p-2 hover:bg-blue-50 rounded-lg transition">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-900 to-amber-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-full bg-blue-900 flex items-center justify-center">
                   <User className="w-4 h-4 text-white" />
                 </div>
               </button>
               <AccountDropdown />
-            </div>
-
-            {/* Location - Compact with Dropdown */}
-            <div className="relative group">
-              <button className="flex items-center space-x-1 px-3 py-2 bg-blue-50 rounded-lg hover:bg-blue-100 transition">
-                <MapPin className="w-4 h-4 text-blue-700" />
-                <span className="text-xs font-semibold text-blue-900 hidden xl:inline">{currentLocation.split(',')[0]}</span>
-                <ChevronDown className="w-3 h-3 text-blue-700" />
-              </button>
-              <LocationDropdown isCompact={true} />
             </div>
           </div>
         </div>
@@ -655,7 +570,7 @@ function Header() {
     </header>
   );
 
-  // Mobile Compact Header (simpler version)
+  // Mobile Compact Header
   const MobileCompactHeader = () => (
     <header className={`fixed top-0 left-0 right-0 z-50 bg-white shadow-lg border-b border-gray-200 transition-transform duration-300 ${
       isScrolled ? '-translate-y-full' : 'translate-y-0'
@@ -691,25 +606,17 @@ function Header() {
               {activeMode === 'marketplace' ? 'Market' : 'Bespoke'}
             </div>
 
-            {/* Location - Mobile Compact */}
-            <div className="relative group">
-              <button className="flex items-center space-x-1 px-2 py-1.5 bg-blue-50 rounded-lg hover:bg-blue-100 transition">
-                <MapPin className="w-4 h-4 text-blue-700" />
-                <span className="text-xs font-semibold text-blue-900 hidden sm:inline">{currentLocation.split(',')[0]}</span>
-              </button>
-            </div>
-
             {/* Search Button */}
             <button className="p-2 hover:bg-blue-50 rounded-lg transition">
               <Search className="w-5 h-5 text-blue-800" />
             </button>
 
-            {/* Cart */}
+            {/* Cart - Updated without gradient */}
             <div className="relative">
               <button className="p-2 hover:bg-blue-50 rounded-lg transition relative">
                 <ShoppingCart className="w-5 h-5 text-blue-800" />
                 {cartItems > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-gradient-to-r from-blue-900 to-amber-600 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold">
+                  <span className="absolute -top-1 -right-1 bg-blue-900 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold">
                     {cartItems}
                   </span>
                 )}
