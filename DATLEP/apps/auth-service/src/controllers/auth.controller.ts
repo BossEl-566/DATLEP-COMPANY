@@ -13,6 +13,7 @@ import { User } from "@datlep/database";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { setCookie } from "../utils/cookies/setCookie";
+import { sendPasswordResetConfirmation } from "../utils/sendMail";
 
 // Register a new user
 export const userRegistration = async (
@@ -33,7 +34,7 @@ export const userRegistration = async (
       return next(new ValidationError("Email already in use"));
     }
 
-    // OTP handling
+    // OTP handling - these will throw errors if restrictions exist
     await checkOtpRestriction(email, next);
     await trackOtpRequest(email, next);
     await sendOtp(name, email, "user-activation-mail");
@@ -64,15 +65,16 @@ export const verifyUserOtp = async (
     }
 
     await verifyOtp(email, otp, next);
-    //hash password and create user
+    
+    // Hash password and create user
     const hashedPassword = await bcrypt.hash(password, 10);
     await User.create({ name, email, password: hashedPassword });
+    
     res.status(201).json({
       success: true,
       message: "User registered successfully",
     });
       
-    
   } catch (error) {
     return next(error);
   }
@@ -89,23 +91,27 @@ export const loginUser = async (
    if (!email || !password) {
     return next(new ValidationError("Email and password are required"));
    } 
+    
     const user = await User.findOne({ email });
     if (!user) {
       return next(new AuthenticationError("User not found"));
     }
-    //verify password
+    
+    // Verify password
     const isMatch = await bcrypt.compare(password, user.password!);
     if (!isMatch) {
       return next(new AuthenticationError("Invalid credentials"));
     }
 
-    //Generate access and refresh tokens 
+    // Generate access and refresh tokens 
     const accessToken = jwt.sign({
-      id: user.id, role: 'user'
+      id: user.id, 
+      role: 'user'
     }, process.env.ACCESS_TOKEN_SECRET!, { expiresIn: "15m" });
 
     const refreshToken = jwt.sign({
-      id: user.id, role: 'user'
+      id: user.id, 
+      role: 'user'
     }, process.env.REFRESH_TOKEN_SECRET!, { expiresIn: "7d" });
 
     // Send tokens in response
@@ -126,22 +132,30 @@ export const loginUser = async (
   }
 }; 
 
-//Forgot Password
+// Forgot Password
 export const userForgotPassword = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
- await handleForgotPassword(req, res, next, 'user');
+  try {
+    await handleForgotPassword(req, res, next, 'user');
+  } catch (error) {
+    return next(error);
+  }
 }
 
-//Verify for Reset OTP
+// Verify for Reset OTP
 export const verifyUserForgotPassword = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
-  await verifyForgotPasswordOtp(req, res, next);
+  try {
+    await verifyForgotPasswordOtp(req, res, next);
+  } catch (error) {
+    return next(error);
+  }
 }
 
 // Reset Password
@@ -155,17 +169,29 @@ export const resetUserPassword = async (
     if (!email || !newPassword) {
       return next(new ValidationError("Email and new password are required"));
     }
+    
     const user = await User.findOne({ email });
     if (!user) {
       return next(new ValidationError("User with this email does not exist"));
     }
-    //compare new password with old password
+    
+    // Compare new password with old password
     const isSamePassword = await bcrypt.compare(newPassword, user.password!);
     if (isSamePassword) {
       return next(new ValidationError("New password cannot be the same as the old password"));
     }
+    
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     await User.updateOne({ email }, { password: hashedPassword });
+    
+    // Send confirmation email
+    try {
+      await sendPasswordResetConfirmation(email, user.name);
+    } catch (emailError) {
+      console.error('Failed to send confirmation email:', emailError);
+      // Don't fail the whole request if email fails
+    }
+    
     res.status(200).json({
       message: "Password reset successfully"
     });
