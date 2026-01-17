@@ -1,6 +1,7 @@
 import Header from '../shared/widgets';
 import './global.css';
 import { Poppins, Roboto } from 'next/font/google';
+import Provider from './providers';
 
 export const metadata = {
   title: 'Datlep - Digital Fashion Marketplace',
@@ -27,10 +28,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${poppins.variable} ${roboto.variable} font-sans`}>
+        <Provider>
         <Header />
         <main className="min-h-screen">
           {children}
         </main>
+        </Provider>
       </body>
     </html>
   )
