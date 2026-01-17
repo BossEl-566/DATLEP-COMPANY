@@ -2,15 +2,17 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Search, MapPin, ChevronDown, ShoppingCart, User, Menu, X, Bell, HelpCircle, Tag, Truck, Shield } from 'lucide-react';
+import { Search, MapPin, ChevronDown, ShoppingCart, User, Menu, X, Bell, HelpCircle, Tag, Truck, Shield, LogOut } from 'lucide-react';
 import ChartIcon from '../../assets/svgs/ChartIcon';
 import WishlistIcon from '../../assets/svgs/WishlistIcon';
 import BespokeIcon from '../../assets/svgs/BespokeIcon';
 import HeaderCategories from './header-button';
 import logo from '../../assets/images/datlep-logo.png';
 import Link from 'next/link';
+import useUser from '../../configs/hooks/useUser';
 
 function Header() {
+  const { user } = useUser();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeMode, setActiveMode] = useState<'marketplace' | 'bespoke'>('marketplace');
   const [cartItems] = useState(3);
@@ -23,27 +25,7 @@ function Header() {
   const [isMobile, setIsMobile] = useState(false);
   
   const headerRef = React.useRef<HTMLElement>(null);
-
-  // Login routes for different scenarios
-  const loginRoutes = {
-    // Main login page
-    mainLogin: '/login',
-    // Alternative login pages
-    customerLogin: '/auth/customer/login',
-    tailorLogin: '/auth/tailor/login',
-    sellerLogin: '/auth/seller/login',
-    // Social login redirects
-    googleLogin: '/api/auth/google',
-    facebookLogin: '/api/auth/facebook',
-    // Specific flows
-    loginWithReturn: '/auth/login?returnUrl=/dashboard',
-    loginWithMode: '/auth/login?mode=bespoke',
-    // Registration flows
-    register: '/auth/register',
-    registerCustomer: '/auth/register/customer',
-    registerTailor: '/auth/register/tailor',
-  };
-
+  
   const locations = [
     'Lagos, Nigeria',
     'Abuja, Nigeria',
@@ -53,98 +35,173 @@ function Header() {
     'Johannesburg, South Africa'
   ];
 
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024);
-    };
+  // Login routes for different scenarios
+  const loginRoutes = {
+    mainLogin: '/login',
+    customerLogin: '/auth/customer/login',
+    tailorLogin: '/auth/tailor/login',
+    sellerLogin: '/auth/seller/login',
+    googleLogin: '/api/auth/google',
+    facebookLogin: '/api/auth/facebook',
+    loginWithReturn: '/auth/login?returnUrl=/dashboard',
+    loginWithMode: '/auth/login?mode=bespoke',
+    register: '/auth/register',
+    registerCustomer: '/auth/register/customer',
+    registerTailor: '/auth/register/tailor',
+  };
+
+  // Function to get user greeting
+  const getUserGreeting = () => {
+    if (!user) return "Hello, Sign in";
     
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    
-    if (headerRef.current) {
-      setHeaderHeight(headerRef.current.offsetHeight);
+    if (user.firstName) {
+      return `Hello, ${user.firstName}`;
+    } else if (user.email) {
+      const name = user.email.split('@')[0];
+      return `Hello, ${name}`;
     }
+    return "Hello, User";
+  };
 
-    let lastScrollY = window.scrollY;
-    let ticking = false;
+  // Function to get user initials for avatar
+  const getUserInitials = () => {
+    if (!user) return "U";
+    
+    if (user.firstName && user.lastName) {
+      return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
+    } else if (user.firstName) {
+      return user.firstName.charAt(0).toUpperCase();
+    } else if (user.email) {
+      return user.email.charAt(0).toUpperCase();
+    }
+    return "U";
+  };
 
-    const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          const currentScrollY = window.scrollY;
-          
-          if (currentScrollY > headerHeight * 0.8) {
-            setShowCompactHeader(true);
-          } else {
-            setShowCompactHeader(false);
-          }
-          
-          if (currentScrollY > lastScrollY && currentScrollY > 100) {
-            setIsScrolled(true);
-          } else if (currentScrollY < lastScrollY) {
-            setIsScrolled(false);
-          }
-          
-          lastScrollY = currentScrollY;
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', checkMobile);
-    };
-  }, [headerHeight]);
-
-  // Account dropdown content (updated without gradient)
+  // Account dropdown component
   const AccountDropdown = () => (
     <div className="absolute top-full right-0 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
       <div className="p-5">
-        <div className="mb-4">
-          <Link href={loginRoutes.mainLogin} className="w-full block">
-            <button className="w-full bg-blue-900 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-800 transition shadow-sm">
-              Sign in / Register
-            </button>
-          </Link>
-        </div>
-        <div className="space-y-3">
-          <Link href={loginRoutes.customerLogin} className="block text-gray-700 hover:text-blue-900 font-medium transition py-2 hover:bg-blue-50 px-2 rounded">
-            Customer Login
-          </Link>
-          <Link href={loginRoutes.tailorLogin} className="block text-gray-700 hover:text-blue-900 font-medium transition py-2 hover:bg-blue-50 px-2 rounded">
-            Tailor Login
-          </Link>
-          <Link href={loginRoutes.sellerLogin} className="block text-gray-700 hover:text-blue-900 font-medium transition py-2 hover:bg-blue-50 px-2 rounded">
-            Seller Login
-          </Link>
-          <Link href="#" className="block text-gray-700 hover:text-blue-900 font-medium transition py-2 hover:bg-blue-50 px-2 rounded">Your Orders</Link>
-          <Link href="#" className="block text-gray-700 hover:text-blue-900 font-medium transition py-2 hover:bg-blue-50 px-2 rounded">Your Measurements</Link>
-          <Link href="#" className="block text-gray-700 hover:text-blue-900 font-medium transition py-2 hover:bg-blue-50 px-2 rounded">Saved Tailors</Link>
-          <Link href="#" className="block text-gray-700 hover:text-blue-900 font-medium transition py-2 hover:bg-blue-50 px-2 rounded">Account Settings</Link>
-          <hr className="my-3 border-gray-200" />
-          <Link href={loginRoutes.registerTailor} className="block text-blue-900 font-semibold transition py-2 hover:bg-blue-50 px-2 rounded">
-            Become a Seller
-          </Link>
-          <Link href="#" className="block text-blue-900 font-semibold transition py-2 hover:bg-blue-50 px-2 rounded">Help Center</Link>
-        </div>
-        <div className="mt-4 pt-4 border-t border-gray-200">
-          <div className="text-xs text-gray-500 mb-2">Quick login with:</div>
-          <div className="flex space-x-2">
-            <Link href={loginRoutes.googleLogin} className="flex-1">
-              <button className="w-full bg-red-50 hover:bg-red-100 text-red-700 text-xs py-2 px-3 rounded-lg font-medium transition">
-                Google
-              </button>
-            </Link>
-            <Link href={loginRoutes.facebookLogin} className="flex-1">
-              <button className="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs py-2 px-3 rounded-lg font-medium transition">
-                Facebook
+        {/* User info section if logged in */}
+        {user ? (
+          <>
+            <div className="flex items-center space-x-3 mb-4 pb-4 border-b border-gray-200">
+              <div className="w-12 h-12 rounded-full bg-blue-900 flex items-center justify-center text-white font-semibold text-lg shadow-md">
+                {getUserInitials()}
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900">
+                  {user.firstName || user.email?.split('@')[0]}
+                </h3>
+                <p className="text-sm text-gray-600">{user.email}</p>
+                {user.role && (
+                  <span className={`mt-1 inline-block px-2 py-0.5 text-xs rounded-full ${
+                    user.role === 'admin' ? 'bg-purple-100 text-purple-800' :
+                    user.role === 'tailor' ? 'bg-amber-100 text-amber-800' :
+                    user.role === 'seller' ? 'bg-green-100 text-green-800' :
+                    'bg-blue-100 text-blue-800'
+                  }`}>
+                    {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                  </span>
+                )}
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="mb-4">
+            <Link href={loginRoutes.mainLogin} className="w-full block">
+              <button className="w-full bg-blue-900 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-800 transition shadow-sm">
+                Sign in / Register
               </button>
             </Link>
           </div>
+        )}
+        
+        <div className="space-y-3">
+          {!user ? (
+            <>
+              <Link href={loginRoutes.customerLogin} className="block text-gray-700 hover:text-blue-900 font-medium transition py-2 hover:bg-blue-50 px-2 rounded">
+                Customer Login
+              </Link>
+              <Link href={loginRoutes.tailorLogin} className="block text-gray-700 hover:text-blue-900 font-medium transition py-2 hover:bg-blue-50 px-2 rounded">
+                Tailor Login
+              </Link>
+              <Link href={loginRoutes.sellerLogin} className="block text-gray-700 hover:text-blue-900 font-medium transition py-2 hover:bg-blue-50 px-2 rounded">
+                Seller Login
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link href="/dashboard" className="block text-gray-700 hover:text-blue-900 font-medium transition py-2 hover:bg-blue-50 px-2 rounded">
+                Dashboard
+              </Link>
+              <Link href="/profile" className="block text-gray-700 hover:text-blue-900 font-medium transition py-2 hover:bg-blue-50 px-2 rounded">
+                My Profile
+              </Link>
+              <Link href="/orders" className="block text-gray-700 hover:text-blue-900 font-medium transition py-2 hover:bg-blue-50 px-2 rounded">
+                Your Orders
+              </Link>
+              {user.role === 'customer' && (
+                <Link href="/measurements" className="block text-gray-700 hover:text-blue-900 font-medium transition py-2 hover:bg-blue-50 px-2 rounded">
+                  Your Measurements
+                </Link>
+              )}
+              {user.role === 'tailor' || user.role === 'seller' ? (
+                <Link href="/seller/dashboard" className="block text-gray-700 hover:text-blue-900 font-medium transition py-2 hover:bg-blue-50 px-2 rounded">
+                  Seller Dashboard
+                </Link>
+              ) : (
+                <Link href="/saved-tailors" className="block text-gray-700 hover:text-blue-900 font-medium transition py-2 hover:bg-blue-50 px-2 rounded">
+                  Saved Tailors
+                </Link>
+              )}
+              <Link href="/settings" className="block text-gray-700 hover:text-blue-900 font-medium transition py-2 hover:bg-blue-50 px-2 rounded">
+                Account Settings
+              </Link>
+            </>
+          )}
+          
+          <hr className="my-3 border-gray-200" />
+          
+          {!user && (
+            <>
+              <Link href={loginRoutes.registerTailor} className="block text-blue-900 font-semibold transition py-2 hover:bg-blue-50 px-2 rounded">
+                Become a Seller
+              </Link>
+              <Link href="/help" className="block text-blue-900 font-semibold transition py-2 hover:bg-blue-50 px-2 rounded">
+                Help Center
+              </Link>
+            </>
+          )}
+          
+          {user && (
+            <button
+              
+              className="w-full flex items-center justify-center space-x-2 text-red-600 hover:text-red-800 font-medium transition py-2 hover:bg-red-50 px-2 rounded"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Logout</span>
+            </button>
+          )}
         </div>
+        
+        {/* Social login section only for non-logged in users */}
+        {!user && (
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="text-xs text-gray-500 mb-2">Quick login with:</div>
+            <div className="flex space-x-2">
+              <Link href={loginRoutes.googleLogin} className="flex-1">
+                <button className="w-full bg-red-50 hover:bg-red-100 text-red-700 text-xs py-2 px-3 rounded-lg font-medium transition">
+                  Google
+                </button>
+              </Link>
+              <Link href={loginRoutes.facebookLogin} className="flex-1">
+                <button className="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs py-2 px-3 rounded-lg font-medium transition">
+                  Facebook
+                </button>
+              </Link>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -177,6 +234,29 @@ function Header() {
     <div className="lg:hidden bg-white border-t border-gray-200 shadow-xl">
       <div className="max-w-8xl mx-auto px-4 py-6">
         <div className="space-y-1">
+          {/* User info if logged in */}
+          {user && (
+            <div className="flex items-center space-x-3 mb-4 p-3 bg-blue-50 rounded-lg">
+              <div className="w-12 h-12 rounded-full bg-blue-900 flex items-center justify-center text-white font-semibold">
+                {getUserInitials()}
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900">{user.firstName || user.email?.split('@')[0]}</h3>
+                <p className="text-sm text-gray-600">{user.email}</p>
+                {user.role && (
+                  <span className={`mt-1 inline-block px-2 py-0.5 text-xs rounded-full ${
+                    user.role === 'admin' ? 'bg-purple-100 text-purple-800' :
+                    user.role === 'tailor' ? 'bg-amber-100 text-amber-800' :
+                    user.role === 'seller' ? 'bg-green-100 text-green-800' :
+                    'bg-blue-100 text-blue-800'
+                  }`}>
+                    {user.role}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+          
           <div className="flex items-center space-x-4 mb-4">
             <div className="flex items-center space-x-2">
               <Shield className="w-5 h-5 text-blue-700" />
@@ -216,29 +296,69 @@ function Header() {
               </div>
             </div>
             
-            {/* Mobile login buttons */}
-            <div className="space-y-2 mb-4">
-              <Link href={loginRoutes.mainLogin} className="block w-full">
-                <button className="w-full bg-blue-900 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-800 transition">
-                  Sign in / Register
-                </button>
-              </Link>
-              <Link href={loginRoutes.customerLogin} className="block">
-                <button className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 px-4 rounded-lg font-medium transition">
-                  Customer Login
-                </button>
-              </Link>
-              <Link href={loginRoutes.tailorLogin} className="block">
-                <button className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 px-4 rounded-lg font-medium transition">
-                  Tailor Login
-                </button>
-              </Link>
-            </div>
+            {/* Mobile login buttons - conditionally show */}
+            {!user ? (
+              <div className="space-y-2 mb-4">
+                <Link href={loginRoutes.mainLogin} className="block w-full">
+                  <button className="w-full bg-blue-900 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-800 transition">
+                    Sign in / Register
+                  </button>
+                </Link>
+                <Link href={loginRoutes.customerLogin} className="block">
+                  <button className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 px-4 rounded-lg font-medium transition">
+                    Customer Login
+                  </button>
+                </Link>
+                <Link href={loginRoutes.tailorLogin} className="block">
+                  <button className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 px-4 rounded-lg font-medium transition">
+                    Tailor Login
+                  </button>
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-2 mb-4">
+                <Link href="/profile" className="block">
+                  <button className="w-full bg-blue-900 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-800 transition">
+                    View Profile
+                  </button>
+                </Link>
+                <Link href="/dashboard" className="block">
+                  <button className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 px-4 rounded-lg font-medium transition">
+                    Dashboard
+                  </button>
+                </Link>
+              </div>
+            )}
             
-            <Link href="#" className="block text-gray-700 hover:text-blue-900 font-medium py-3 px-4 hover:bg-blue-50 rounded-lg transition">Your Orders</Link>
-            <Link href="#" className="block text-gray-700 hover:text-blue-900 font-medium py-3 px-4 hover:bg-blue-50 rounded-lg transition">Wishlist</Link>
-            <Link href="#" className="block text-gray-700 hover:text-blue-900 font-medium py-3 px-4 hover:bg-blue-50 rounded-lg transition">Compare Items</Link>
-            <Link href="#" className="block text-gray-700 hover:text-blue-900 font-medium py-3 px-4 hover:bg-blue-50 rounded-lg transition">Account</Link>
+            {/* Other links */}
+            <Link href="/orders" className="block text-gray-700 hover:text-blue-900 font-medium py-3 px-4 hover:bg-blue-50 rounded-lg transition">
+              Your Orders
+            </Link>
+            <Link href="/wishlist" className="block text-gray-700 hover:text-blue-900 font-medium py-3 px-4 hover:bg-blue-50 rounded-lg transition">
+              Wishlist
+            </Link>
+            <Link href="/compare" className="block text-gray-700 hover:text-blue-900 font-medium py-3 px-4 hover:bg-blue-50 rounded-lg transition">
+              Compare Items
+            </Link>
+            {user ? (
+              <>
+                <Link href="/settings" className="block text-gray-700 hover:text-blue-900 font-medium py-3 px-4 hover:bg-blue-50 rounded-lg transition">
+                  Settings
+                </Link>
+                <button
+                  
+                  className="w-full text-left text-red-600 hover:text-red-800 font-medium py-3 px-4 hover:bg-red-50 rounded-lg transition"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <Link href="/account" className="block text-gray-700 hover:text-blue-900 font-medium py-3 px-4 hover:bg-blue-50 rounded-lg transition">
+                Account
+              </Link>
+            )}
+            
+            {/* Language/Currency selectors */}
             <div className="flex space-x-3 mt-4">
               <select className="flex-1 bg-gray-50 border border-gray-300 text-gray-700 text-sm rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
                 <option value="en">English</option>
@@ -251,6 +371,8 @@ function Header() {
                 <option value="ghs">GHS</option>
               </select>
             </div>
+            
+            {/* Become a Seller link */}
             <div className="mt-4">
               <Link href={loginRoutes.registerTailor} className="block text-center text-blue-900 font-semibold py-2.5 px-4 hover:bg-blue-50 rounded-lg transition border border-blue-200">
                 Become a Seller
@@ -404,16 +526,26 @@ function Header() {
               </button>
             </div>
 
-            {/* Account - Updated without gradient */}
+            {/* Account with dynamic user info */}
             <div className="relative group">
-              <Link href={loginRoutes.mainLogin}>
+              <Link href={user ? "/profile" : loginRoutes.mainLogin}>
                 <button className="flex items-center space-x-3 p-2 rounded-xl hover:bg-blue-50 transition">
                   <div className="w-10 h-10 rounded-full bg-blue-900 flex items-center justify-center shadow-md">
-                    <User className="w-5 h-5 text-white" />
+                    {user ? (
+                      <span className="text-white font-semibold text-sm">
+                        {getUserInitials()}
+                      </span>
+                    ) : (
+                      <User className="w-5 h-5 text-white" />
+                    )}
                   </div>
                   <div className="hidden lg:block text-left">
-                    <div className="text-sm font-semibold text-blue-900">Hello, Sign in</div>
-                    <div className="text-xs text-gray-600">Account & Orders</div>
+                    <div className="text-sm font-semibold text-blue-900">
+                      {getUserGreeting()}
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      {user ? "Account & Profile" : "Account & Orders"}
+                    </div>
                   </div>
                 </button>
               </Link>
@@ -647,10 +779,16 @@ function Header() {
 
             {/* Account - Compact with Dropdown */}
             <div className="relative group">
-              <Link href={loginRoutes.mainLogin}>
+              <Link href={user ? "/profile" : loginRoutes.mainLogin}>
                 <button className="p-2 hover:bg-blue-50 rounded-lg transition">
                   <div className="w-8 h-8 rounded-full bg-blue-900 flex items-center justify-center">
-                    <User className="w-4 h-4 text-white" />
+                    {user ? (
+                      <span className="text-white font-semibold text-xs">
+                        {getUserInitials()}
+                      </span>
+                    ) : (
+                      <User className="w-4 h-4 text-white" />
+                    )}
                   </div>
                 </button>
               </Link>
@@ -720,10 +858,16 @@ function Header() {
             </div>
             
             {/* Quick login button in compact mobile header */}
-            <Link href={loginRoutes.mainLogin}>
+            <Link href={user ? "/profile" : loginRoutes.mainLogin}>
               <button className="p-2 hover:bg-blue-50 rounded-lg transition">
                 <div className="w-8 h-8 rounded-full bg-blue-900 flex items-center justify-center">
-                  <User className="w-4 h-4 text-white" />
+                  {user ? (
+                    <span className="text-white font-semibold text-xs">
+                      {getUserInitials()}
+                    </span>
+                  ) : (
+                    <User className="w-4 h-4 text-white" />
+                  )}
                 </div>
               </button>
             </Link>
@@ -732,6 +876,52 @@ function Header() {
       </div>
     </header>
   );
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    if (headerRef.current) {
+      setHeaderHeight(headerRef.current.offsetHeight);
+    }
+
+    let lastScrollY = window.scrollY;
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY;
+          
+          if (currentScrollY > headerHeight * 0.8) {
+            setShowCompactHeader(true);
+          } else {
+            setShowCompactHeader(false);
+          }
+          
+          if (currentScrollY > lastScrollY && currentScrollY > 100) {
+            setIsScrolled(true);
+          } else if (currentScrollY < lastScrollY) {
+            setIsScrolled(false);
+          }
+          
+          lastScrollY = currentScrollY;
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', checkMobile);
+    };
+  }, [headerHeight]);
 
   return (
     <>
