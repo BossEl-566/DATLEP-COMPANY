@@ -54,8 +54,8 @@ function Header() {
   const getUserGreeting = () => {
     if (!user) return "Hello, Sign in";
     
-    if (user.firstName) {
-      return `Hello, ${user.firstName}`;
+    if (user.name) {
+      return `Hello, ${user.name.split(' ')[0]}`;
     } else if (user.email) {
       const name = user.email.split('@')[0];
       return `Hello, ${name}`;
@@ -90,7 +90,7 @@ function Header() {
               </div>
               <div>
                 <h3 className="font-bold text-gray-900">
-                  {user.firstName || user.email?.split('@')[0]}
+                  {user.name.split(' ')[0] || user.email?.split('@')[0]}
                 </h3>
                 <p className="text-sm text-gray-600">{user.email}</p>
                 {user.role && (
