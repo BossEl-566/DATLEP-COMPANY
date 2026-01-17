@@ -8,6 +8,7 @@ import WishlistIcon from '../../assets/svgs/WishlistIcon';
 import BespokeIcon from '../../assets/svgs/BespokeIcon';
 import HeaderCategories from './header-button';
 import logo from '../../assets/images/datlep-logo.png';
+import Link from 'next/link';
 
 function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -22,6 +23,26 @@ function Header() {
   const [isMobile, setIsMobile] = useState(false);
   
   const headerRef = React.useRef<HTMLElement>(null);
+
+  // Login routes for different scenarios
+  const loginRoutes = {
+    // Main login page
+    mainLogin: '/login',
+    // Alternative login pages
+    customerLogin: '/auth/customer/login',
+    tailorLogin: '/auth/tailor/login',
+    sellerLogin: '/auth/seller/login',
+    // Social login redirects
+    googleLogin: '/api/auth/google',
+    facebookLogin: '/api/auth/facebook',
+    // Specific flows
+    loginWithReturn: '/auth/login?returnUrl=/dashboard',
+    loginWithMode: '/auth/login?mode=bespoke',
+    // Registration flows
+    register: '/auth/register',
+    registerCustomer: '/auth/register/customer',
+    registerTailor: '/auth/register/tailor',
+  };
 
   const locations = [
     'Lagos, Nigeria',
@@ -83,18 +104,46 @@ function Header() {
     <div className="absolute top-full right-0 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
       <div className="p-5">
         <div className="mb-4">
-          <button className="w-full bg-blue-900 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-800 transition shadow-sm">
-            Sign in / Register
-          </button>
+          <Link href={loginRoutes.mainLogin} className="w-full block">
+            <button className="w-full bg-blue-900 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-800 transition shadow-sm">
+              Sign in / Register
+            </button>
+          </Link>
         </div>
         <div className="space-y-3">
-          <a href="#" className="block text-gray-700 hover:text-blue-900 font-medium transition py-2 hover:bg-blue-50 px-2 rounded">Your Orders</a>
-          <a href="#" className="block text-gray-700 hover:text-blue-900 font-medium transition py-2 hover:bg-blue-50 px-2 rounded">Your Measurements</a>
-          <a href="#" className="block text-gray-700 hover:text-blue-900 font-medium transition py-2 hover:bg-blue-50 px-2 rounded">Saved Tailors</a>
-          <a href="#" className="block text-gray-700 hover:text-blue-900 font-medium transition py-2 hover:bg-blue-50 px-2 rounded">Account Settings</a>
+          <Link href={loginRoutes.customerLogin} className="block text-gray-700 hover:text-blue-900 font-medium transition py-2 hover:bg-blue-50 px-2 rounded">
+            Customer Login
+          </Link>
+          <Link href={loginRoutes.tailorLogin} className="block text-gray-700 hover:text-blue-900 font-medium transition py-2 hover:bg-blue-50 px-2 rounded">
+            Tailor Login
+          </Link>
+          <Link href={loginRoutes.sellerLogin} className="block text-gray-700 hover:text-blue-900 font-medium transition py-2 hover:bg-blue-50 px-2 rounded">
+            Seller Login
+          </Link>
+          <Link href="#" className="block text-gray-700 hover:text-blue-900 font-medium transition py-2 hover:bg-blue-50 px-2 rounded">Your Orders</Link>
+          <Link href="#" className="block text-gray-700 hover:text-blue-900 font-medium transition py-2 hover:bg-blue-50 px-2 rounded">Your Measurements</Link>
+          <Link href="#" className="block text-gray-700 hover:text-blue-900 font-medium transition py-2 hover:bg-blue-50 px-2 rounded">Saved Tailors</Link>
+          <Link href="#" className="block text-gray-700 hover:text-blue-900 font-medium transition py-2 hover:bg-blue-50 px-2 rounded">Account Settings</Link>
           <hr className="my-3 border-gray-200" />
-          <a href="#" className="block text-blue-900 font-semibold transition py-2 hover:bg-blue-50 px-2 rounded">Become a Seller</a>
-          <a href="#" className="block text-blue-900 font-semibold transition py-2 hover:bg-blue-50 px-2 rounded">Help Center</a>
+          <Link href={loginRoutes.registerTailor} className="block text-blue-900 font-semibold transition py-2 hover:bg-blue-50 px-2 rounded">
+            Become a Seller
+          </Link>
+          <Link href="#" className="block text-blue-900 font-semibold transition py-2 hover:bg-blue-50 px-2 rounded">Help Center</Link>
+        </div>
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <div className="text-xs text-gray-500 mb-2">Quick login with:</div>
+          <div className="flex space-x-2">
+            <Link href={loginRoutes.googleLogin} className="flex-1">
+              <button className="w-full bg-red-50 hover:bg-red-100 text-red-700 text-xs py-2 px-3 rounded-lg font-medium transition">
+                Google
+              </button>
+            </Link>
+            <Link href={loginRoutes.facebookLogin} className="flex-1">
+              <button className="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs py-2 px-3 rounded-lg font-medium transition">
+                Facebook
+              </button>
+            </Link>
+          </div>
         </div>
       </div>
     </div>
@@ -167,10 +216,29 @@ function Header() {
               </div>
             </div>
             
-            <a href="#" className="block text-gray-700 hover:text-blue-900 font-medium py-3 px-4 hover:bg-blue-50 rounded-lg transition">Your Orders</a>
-            <a href="#" className="block text-gray-700 hover:text-blue-900 font-medium py-3 px-4 hover:bg-blue-50 rounded-lg transition">Wishlist</a>
-            <a href="#" className="block text-gray-700 hover:text-blue-900 font-medium py-3 px-4 hover:bg-blue-50 rounded-lg transition">Compare Items</a>
-            <a href="#" className="block text-gray-700 hover:text-blue-900 font-medium py-3 px-4 hover:bg-blue-50 rounded-lg transition">Account</a>
+            {/* Mobile login buttons */}
+            <div className="space-y-2 mb-4">
+              <Link href={loginRoutes.mainLogin} className="block w-full">
+                <button className="w-full bg-blue-900 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-800 transition">
+                  Sign in / Register
+                </button>
+              </Link>
+              <Link href={loginRoutes.customerLogin} className="block">
+                <button className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 px-4 rounded-lg font-medium transition">
+                  Customer Login
+                </button>
+              </Link>
+              <Link href={loginRoutes.tailorLogin} className="block">
+                <button className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 px-4 rounded-lg font-medium transition">
+                  Tailor Login
+                </button>
+              </Link>
+            </div>
+            
+            <Link href="#" className="block text-gray-700 hover:text-blue-900 font-medium py-3 px-4 hover:bg-blue-50 rounded-lg transition">Your Orders</Link>
+            <Link href="#" className="block text-gray-700 hover:text-blue-900 font-medium py-3 px-4 hover:bg-blue-50 rounded-lg transition">Wishlist</Link>
+            <Link href="#" className="block text-gray-700 hover:text-blue-900 font-medium py-3 px-4 hover:bg-blue-50 rounded-lg transition">Compare Items</Link>
+            <Link href="#" className="block text-gray-700 hover:text-blue-900 font-medium py-3 px-4 hover:bg-blue-50 rounded-lg transition">Account</Link>
             <div className="flex space-x-3 mt-4">
               <select className="flex-1 bg-gray-50 border border-gray-300 text-gray-700 text-sm rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
                 <option value="en">English</option>
@@ -183,9 +251,11 @@ function Header() {
                 <option value="ghs">GHS</option>
               </select>
             </div>
-            <button className="w-full mt-4 bg-blue-900 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-800 transition">
-              Sign in / Register
-            </button>
+            <div className="mt-4">
+              <Link href={loginRoutes.registerTailor} className="block text-center text-blue-900 font-semibold py-2.5 px-4 hover:bg-blue-50 rounded-lg transition border border-blue-200">
+                Become a Seller
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -209,10 +279,14 @@ function Header() {
             </span>
           </div>
           <div className="flex items-center space-x-6">
-            <button className="hover:text-amber-300 transition text-sm font-medium">Sell on DATLEP</button>
-            <button className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-1 rounded-md transition font-medium">
-              Become a Creator
-            </button>
+            <Link href={loginRoutes.sellerLogin}>
+              <button className="hover:text-amber-300 transition text-sm font-medium">Sell on DATLEP</button>
+            </Link>
+            <Link href={loginRoutes.registerTailor}>
+              <button className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-1 rounded-md transition font-medium">
+                Become a Creator
+              </button>
+            </Link>
           </div>
         </div>
       </div>
@@ -230,20 +304,24 @@ function Header() {
             </button>
             
             <div className="flex items-center space-x-3">
-              <div className="relative w-12 h-12">
-                <Image
-                  src={logo}
-                  alt="DATLEP Logo"
-                  width={48}
-                  height={48}
-                  className="object-contain"
-                  priority
-                />
-              </div>
+              <Link href="/">
+                <div className="relative w-12 h-12">
+                  <Image
+                    src={logo}
+                    alt="DATLEP Logo"
+                    width={48}
+                    height={48}
+                    className="object-contain"
+                    priority
+                  />
+                </div>
+              </Link>
               <div className="flex flex-col">
-                <span className="text-2xl font-bold bg-gradient-to-r from-blue-900 to-amber-600 bg-clip-text text-transparent">
-                  DATLEP
-                </span>
+                <Link href="/">
+                  <span className="text-2xl font-bold bg-gradient-to-r from-blue-900 to-amber-600 bg-clip-text text-transparent">
+                    DATLEP
+                  </span>
+                </Link>
                 <span className="text-xs text-gray-500 hidden md:block">Craftsmanship Meets Technology</span>
               </div>
             </div>
@@ -259,15 +337,17 @@ function Header() {
                 <ShoppingCart className="w-4 h-4 mr-2" />
                 Marketplace
               </button>
-              <button
-                onClick={() => setActiveMode('bespoke')}
-                className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all flex items-center ${activeMode === 'bespoke' 
-                  ? 'bg-amber-600 text-white shadow-md' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-              >
-                <BespokeIcon className="w-5 h-5 mr-2" />
-                Bespoke
-              </button>
+              <Link href={loginRoutes.loginWithMode}>
+                <button
+                  onClick={() => setActiveMode('bespoke')}
+                  className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all flex items-center ${activeMode === 'bespoke' 
+                    ? 'bg-amber-600 text-white shadow-md' 
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                >
+                  <BespokeIcon className="w-5 h-5 mr-2" />
+                  Bespoke
+                </button>
+              </Link>
             </div>
           </div>
 
@@ -326,15 +406,17 @@ function Header() {
 
             {/* Account - Updated without gradient */}
             <div className="relative group">
-              <button className="flex items-center space-x-3 p-2 rounded-xl hover:bg-blue-50 transition">
-                <div className="w-10 h-10 rounded-full bg-blue-900 flex items-center justify-center shadow-md">
-                  <User className="w-5 h-5 text-white" />
-                </div>
-                <div className="hidden lg:block text-left">
-                  <div className="text-sm font-semibold text-blue-900">Hello, Sign in</div>
-                  <div className="text-xs text-gray-600">Account & Orders</div>
-                </div>
-              </button>
+              <Link href={loginRoutes.mainLogin}>
+                <button className="flex items-center space-x-3 p-2 rounded-xl hover:bg-blue-50 transition">
+                  <div className="w-10 h-10 rounded-full bg-blue-900 flex items-center justify-center shadow-md">
+                    <User className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="hidden lg:block text-left">
+                    <div className="text-sm font-semibold text-blue-900">Hello, Sign in</div>
+                    <div className="text-xs text-gray-600">Account & Orders</div>
+                  </div>
+                </button>
+              </Link>
               <AccountDropdown />
             </div>
           </div>
@@ -422,15 +504,17 @@ function Header() {
             >
               Marketplace
             </button>
-            <button
-              onClick={() => setActiveMode('bespoke')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center ${activeMode === 'bespoke' 
-                ? 'bg-amber-600 text-white' 
-                : 'bg-gray-100 text-gray-700'}`}
-            >
-              <BespokeIcon className="w-4 h-4 mr-1" />
-              Bespoke
-            </button>
+            <Link href={loginRoutes.loginWithMode}>
+              <button
+                onClick={() => setActiveMode('bespoke')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center ${activeMode === 'bespoke' 
+                  ? 'bg-amber-600 text-white' 
+                  : 'bg-gray-100 text-gray-700'}`}
+              >
+                <BespokeIcon className="w-4 h-4 mr-1" />
+                Bespoke
+              </button>
+            </Link>
           </div>
         </div>
       </div>
@@ -449,18 +533,22 @@ function Header() {
         <div className="flex items-center justify-between py-3">
           {/* Logo & Mode Switch - Compact */}
           <div className="flex items-center space-x-4">
-            <div className="relative w-10 h-10">
-              <Image
-                src={logo}
-                alt="DATLEP Logo"
-                width={40}
-                height={40}
-                className="object-contain"
-              />
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-900 to-amber-600 bg-clip-text text-transparent">
-              DATLEP
-            </span>
+            <Link href="/">
+              <div className="relative w-10 h-10">
+                <Image
+                  src={logo}
+                  alt="DATLEP Logo"
+                  width={40}
+                  height={40}
+                  className="object-contain"
+                />
+              </div>
+            </Link>
+            <Link href="/">
+              <span className="text-xl font-bold bg-gradient-to-r from-blue-900 to-amber-600 bg-clip-text text-transparent">
+                DATLEP
+              </span>
+            </Link>
             
             {/* Categories in Compact Header */}
             <div className="hidden lg:block">
@@ -478,15 +566,17 @@ function Header() {
                 <ShoppingCart className="w-3 h-3 mr-1" />
                 Marketplace
               </button>
-              <button
-                onClick={() => setActiveMode('bespoke')}
-                className={`px-4 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center ${activeMode === 'bespoke' 
-                  ? 'bg-amber-600 text-white' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-              >
-                <BespokeIcon className="w-4 h-4 mr-1" />
-                Bespoke
-              </button>
+              <Link href={loginRoutes.loginWithMode}>
+                <button
+                  onClick={() => setActiveMode('bespoke')}
+                  className={`px-4 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center ${activeMode === 'bespoke' 
+                    ? 'bg-amber-600 text-white' 
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                >
+                  <BespokeIcon className="w-4 h-4 mr-1" />
+                  Bespoke
+                </button>
+              </Link>
             </div>
           </div>
 
@@ -557,11 +647,13 @@ function Header() {
 
             {/* Account - Compact with Dropdown */}
             <div className="relative group">
-              <button className="p-2 hover:bg-blue-50 rounded-lg transition">
-                <div className="w-8 h-8 rounded-full bg-blue-900 flex items-center justify-center">
-                  <User className="w-4 h-4 text-white" />
-                </div>
-              </button>
+              <Link href={loginRoutes.mainLogin}>
+                <button className="p-2 hover:bg-blue-50 rounded-lg transition">
+                  <div className="w-8 h-8 rounded-full bg-blue-900 flex items-center justify-center">
+                    <User className="w-4 h-4 text-white" />
+                  </div>
+                </button>
+              </Link>
               <AccountDropdown />
             </div>
           </div>
@@ -585,18 +677,22 @@ function Header() {
             >
               <Menu className="w-6 h-6" />
             </button>
-            <div className="relative w-8 h-8">
-              <Image
-                src={logo}
-                alt="DATLEP Logo"
-                width={32}
-                height={32}
-                className="object-contain"
-              />
-            </div>
-            <span className="text-lg font-bold bg-gradient-to-r from-blue-900 to-amber-600 bg-clip-text text-transparent">
-              DATLEP
-            </span>
+            <Link href="/">
+              <div className="relative w-8 h-8">
+                <Image
+                  src={logo}
+                  alt="DATLEP Logo"
+                  width={32}
+                  height={32}
+                  className="object-contain"
+                />
+              </div>
+            </Link>
+            <Link href="/">
+              <span className="text-lg font-bold bg-gradient-to-r from-blue-900 to-amber-600 bg-clip-text text-transparent">
+                DATLEP
+              </span>
+            </Link>
           </div>
 
           {/* Mobile Quick Actions */}
@@ -622,6 +718,15 @@ function Header() {
                 )}
               </button>
             </div>
+            
+            {/* Quick login button in compact mobile header */}
+            <Link href={loginRoutes.mainLogin}>
+              <button className="p-2 hover:bg-blue-50 rounded-lg transition">
+                <div className="w-8 h-8 rounded-full bg-blue-900 flex items-center justify-center">
+                  <User className="w-4 h-4 text-white" />
+                </div>
+              </button>
+            </Link>
           </div>
         </div>
       </div>
