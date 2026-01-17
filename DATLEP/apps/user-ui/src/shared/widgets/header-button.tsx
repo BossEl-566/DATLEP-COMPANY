@@ -6,6 +6,7 @@ import { Menu, X, ChevronRight, Grid, Building, ShoppingBag, Tag } from 'lucide-
 import BespokeIcon from '../../assets/svgs/BespokeIcon';
 import { CATEGORIES, getTypeIcon, getTypeColor} from '../../configs/constants';
 
+
 interface HeaderCategoriesProps {
   activeMode: 'marketplace' | 'bespoke';
   isCompact?: boolean;
@@ -14,6 +15,8 @@ interface HeaderCategoriesProps {
 function HeaderCategories({ activeMode, isCompact = false }: HeaderCategoriesProps) {
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState('');
+  
+ 
 
   // Desktop Sidebar Component
   const DesktopCategoriesSidebar = () => (

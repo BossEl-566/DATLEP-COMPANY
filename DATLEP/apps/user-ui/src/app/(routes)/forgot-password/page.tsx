@@ -86,7 +86,6 @@ const ForgotPassword = () => {
     handleSubmit,
     formState: { errors, isValid },
     watch,
-    trigger,
     reset,
   } = useForm<ForgotPasswordFormData>({
     mode: 'onChange',
@@ -320,7 +319,7 @@ const ForgotPassword = () => {
   };
 
   const newPassword = watch('newPassword');
-  const confirmPassword = watch('confirmPassword');
+  
 
   // Email regex pattern
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;

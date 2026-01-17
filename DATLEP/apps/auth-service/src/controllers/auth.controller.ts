@@ -15,6 +15,7 @@ import jwt from "jsonwebtoken";
 import { setCookie } from "../utils/cookies/setCookie";
 import { sendPasswordResetConfirmation } from "../utils/sendMail";
 
+
 // Register a new user
 export const userRegistration = async (
   req: Request,
@@ -129,6 +130,67 @@ export const loginUser = async (
 
   } catch (error) {
    return next(error); 
+  }
+}; 
+
+// refresh User Token
+export const refreshToken = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const refreshToken = req.cookies.refreshToken;
+    if (!refreshToken) {
+      throw new AuthenticationError("No refresh token provided");
+    }
+    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET!) as { id: string, role: string };
+    if (!decoded || !decoded.id || !decoded.role) {
+  return next(new AuthenticationError("Invalid refresh token"));
+}
+
+    // let account;
+    // if (decoded.role === 'user') 
+    const user = await User.findById(decoded.id).lean();
+    if (!user) {
+      return next(new AuthenticationError("User not found"));
+    }
+    // Generate new access token
+    const newAccessToken = jwt.sign({
+      id: decoded.id, 
+      role: decoded.role },
+      process.env.ACCESS_TOKEN_SECRET!, 
+      { expiresIn: "15m" }
+    ); 
+
+    setCookie(res, 'accessToken', newAccessToken);
+    return res.status(200).json({
+      success: true });
+    
+  } catch (error) {
+    return next(error);
+    
+  }
+}; 
+
+// get logged in user details
+export const getUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const user = req.user; // Assume user is attached to req in isAuthenticated middleware
+    if (!user) {
+      return next(new AuthenticationError("User not found"));
+    }
+    res.status(201).json({
+      success: true,
+      user, });
+    
+  } catch (error) {
+    return next(error);
+    
   }
 }; 
 
