@@ -154,7 +154,7 @@ type ShopSetupRequest = {
 
 const SellerSignup = () => {
   const router = useRouter();
-  const [currentStep, setCurrentStep] = useState(3);
+  const [currentStep, setCurrentStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formError, setFormError] = useState('');
