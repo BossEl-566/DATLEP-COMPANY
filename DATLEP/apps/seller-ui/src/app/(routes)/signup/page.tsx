@@ -28,27 +28,20 @@ import {
   MapPin,
   Globe,
   Briefcase,
-  Award,
   ArrowRight,
   ChevronRight,
   CheckCircle,
-  Loader2,
-  ShoppingBag,
-  Wrench,
-  Recycle,
-  Bolt,
-  Star,
-  Heart,
   Truck,
-  Tag,
-  Layers,
-  Box,
   ShoppingCart,
-  TrendingUp
+  TrendingUp,
+  CreditCard,
+  Banknote,
+  Wallet
 } from 'lucide-react';
 import { africanCountries } from '../../../utils/countries';
 import { sellerTypes, productCategories, daysOfWeek, SellerType } from '../../../utils/sellerData';
 import logo from '@/assets/images/datlep-logo.png';
+import ConnectBank from '../../../shared/modules/connectBank'; // Import your ConnectBank component
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:5000';
 
@@ -96,6 +89,15 @@ type SellerFormData = {
   }>;
   returnPolicy?: string;
   shippingPolicy?: string;
+  
+  // Step 4: Bank Details (will be handled by ConnectBank component)
+  bankAccount?: {
+    bankName: string;
+    accountNumber: string;
+    accountName: string;
+    bankCode?: string;
+    currency: string;
+  };
 };
 
 // API request types
@@ -147,17 +149,20 @@ type ShopSetupRequest = {
   shippingPolicy?: string;
   customOrderPolicy?: string;
   privacyPolicy?: string;
+  sellerId: string;
 };
 
 const SellerSignup = () => {
   const router = useRouter();
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(3);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formError, setFormError] = useState('');
-  const [signupStep, setSignupStep] = useState<'form' | 'otp' | 'shop'>('form');
+  const [signupStep, setSignupStep] = useState<'form' | 'otp' | 'shop' | 'bank'>('form');
   const [userData, setUserData] = useState<RegistrationRequest | null>(null);
   const [selectedCountry, setSelectedCountry] = useState('NG');
+  const [sellerId, setSellerId] = useState<string | null>(null);
+  const [shopId, setShopId] = useState<string | null>(null);
   
   // OTP State
   const [otp, setOtp] = useState<string[]>(Array(6).fill(''));
@@ -251,12 +256,7 @@ const SellerSignup = () => {
   // Mutation for shop setup
   const shopSetupMutation = useMutation({
     mutationFn: async (data: ShopSetupRequest) => {
-      const token = localStorage.getItem('seller_token');
-      const response = await api.post('/create-shop', data, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+      const response = await api.post('/create-shop', data);
       return response.data;
     },
     onError: (error: any) => {
@@ -323,66 +323,68 @@ const SellerSignup = () => {
   };
 
   const handleOtpSubmit = async (enteredOtp: string) => {
-  if (isOtpLocked || !userData) return;
-  
-  setOtpError('');
-  
-  try {
-    // Send ALL registration data along with OTP
-    const verificationData = {
-      ...userData, // This contains all fields from step 1
-      otp: enteredOtp
-    };
+    if (isOtpLocked || !userData) return;
+    
+    setOtpError('');
+    
+    try {
+      const verificationData = {
+        ...userData,
+        otp: enteredOtp
+      };
 
-    const response = await otpVerificationMutation.mutateAsync(verificationData);
-    
-    // Save token
-    if (response.token) {
-      localStorage.setItem('seller_token', response.token);
-    }
+      const response = await otpVerificationMutation.mutateAsync(verificationData);
+      
+      if (response.seller?.id) {
+        setSellerId(response.seller.id);
+        console.log('Seller ID stored:', response.seller.id);
+      }
+      
+      if (response.token) {
+        localStorage.setItem('seller_token', response.token);
+        console.log('Token saved to localStorage:', response.token);
+      }
 
-    setOtpVerified(true);
-    setOtpAttempts(0);
-    
-    // Move to shop setup step
-    setTimeout(() => {
-      setSignupStep('shop');
-      setCurrentStep(2);
-    }, 1000);
-    
-  } catch (error: any) {
-    // Use backend error message directly
-    setOtpError(error.message);
-    const newAttempts = otpAttempts + 1;
-    setOtpAttempts(newAttempts);
-    
-    if (newAttempts >= 3) {
-      setIsOtpLocked(true);
+      setOtpVerified(true);
+      setOtpAttempts(0);
+      
+      // Move to shop setup step
+      setTimeout(() => {
+        setSignupStep('shop');
+        setCurrentStep(2);
+      }, 1000);
+      
+    } catch (error: any) {
+      setOtpError(error.message);
+      const newAttempts = otpAttempts + 1;
+      setOtpAttempts(newAttempts);
+      
+      if (newAttempts >= 3) {
+        setIsOtpLocked(true);
+      }
     }
-  }
-};
+  };
 
   const handleResendOtp = async () => {
-  if (isOtpLocked || isResending || isTimerActive || !userData) return;
+    if (isOtpLocked || isResending || isTimerActive || !userData) return;
 
-  setIsResending(true);
-  setOtpError('');
-  setOtp(Array(6).fill(''));
+    setIsResending(true);
+    setOtpError('');
+    setOtp(Array(6).fill(''));
 
-  try {
-    // Resend with all user data
-    await registrationMutation.mutateAsync(userData);
-    setTimer(60);
-    setIsTimerActive(true);
-    setTimeout(() => {
-      otpInputRefs.current[0]?.focus();
-    }, 100);
-  } catch (error: any) {
-    setOtpError(error.message);
-  } finally {
-    setIsResending(false);
-  }
-};
+    try {
+      await registrationMutation.mutateAsync(userData);
+      setTimer(60);
+      setIsTimerActive(true);
+      setTimeout(() => {
+        otpInputRefs.current[0]?.focus();
+      }, 100);
+    } catch (error: any) {
+      setOtpError(error.message);
+    } finally {
+      setIsResending(false);
+    }
+  };
 
   const handleCountryChange = (countryCode: string) => {
     setSelectedCountry(countryCode);
@@ -400,42 +402,45 @@ const SellerSignup = () => {
   };
 
   const onAccountSubmit: SubmitHandler<SellerFormData> = async (data) => {
-  setFormError('');
-  
-  try {
-    const registrationData: RegistrationRequest = {
-      name: data.name,
-      email: data.email,
-      password: data.password,
-      phone: data.phone,
-      country: data.country,
-      region: data.region,
-      city: data.city,
-      sellerType: data.sellerType,
-      businessRegistration: data.businessRegistration,
-      yearsInBusiness: data.yearsInBusiness,
-      portfolioLink: data.portfolioLink
-    };
+    setFormError('');
+    
+    try {
+      const registrationData: RegistrationRequest = {
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        phone: data.phone,
+        country: data.country,
+        region: data.region,
+        city: data.city,
+        sellerType: data.sellerType,
+        businessRegistration: data.businessRegistration,
+        yearsInBusiness: data.yearsInBusiness,
+        portfolioLink: data.portfolioLink
+      };
 
-    const response = await registrationMutation.mutateAsync(registrationData);
-    
-    // Store ALL data including password
-    setUserData(registrationData);
-    setSignupStep('otp');
-    setIsTimerActive(true);
-    setTimer(60);
-    
-    setTimeout(() => {
-      otpInputRefs.current[0]?.focus();
-    }, 100);
-    
-  } catch (error: any) {
-    setFormError(error.message);
-  }
-};
+      const response = await registrationMutation.mutateAsync(registrationData);
+      
+      setUserData(registrationData);
+      setSignupStep('otp');
+      setIsTimerActive(true);
+      setTimer(60);
+      
+      setTimeout(() => {
+        otpInputRefs.current[0]?.focus();
+      }, 100);
+      
+    } catch (error: any) {
+      setFormError(error.message);
+    }
+  };
 
   const onShopSubmit: SubmitHandler<SellerFormData> = async (data) => {
     try {
+      if (!sellerId) {
+        throw new Error('Seller ID is required');
+      }
+
       const shopData: ShopSetupRequest = {
         name: data.shopName,
         bio: data.shopBio,
@@ -451,18 +456,29 @@ const SellerSignup = () => {
         returnPolicy: data.returnPolicy,
         shippingPolicy: data.shippingPolicy,
         customOrderPolicy: 'Contact for bulk orders',
-        privacyPolicy: 'We respect your privacy and handle your information securely.'
+        privacyPolicy: 'We respect your privacy and handle your information securely.',
+        sellerId: sellerId
       };
 
       const response = await shopSetupMutation.mutateAsync(shopData);
       
-      // Redirect to seller dashboard
-      router.push('/seller/dashboard');
+      // Store shop ID for bank connection
+      if (response.shop?.id) {
+        setShopId(response.shop.id);
+      }
+      
+      // Move to bank connection step
+      setSignupStep('bank');
+      setCurrentStep(3);
       
     } catch (error: any) {
-      // Use backend error message directly
       setFormError(error.message);
     }
+  };
+
+  const handleBankConnected = () => {
+    // Redirect to seller dashboard after bank connection
+    router.push('/seller/dashboard');
   };
 
   const isSubmitting = registrationMutation.isPending || otpVerificationMutation.isPending || shopSetupMutation.isPending;
@@ -474,10 +490,9 @@ const SellerSignup = () => {
           <div className="flex items-start">
             <ShoppingCart className="h-5 w-5 text-blue-600 mt-0.5 mr-2" />
             <div>
-              <h4 className="text-sm font-medium text-blue-800">Sell Fashion Products on DATLEP</h4>
+              <h4 className="text-sm font-medium text-blue-800">Step 1: Create Your Seller Account</h4>
               <p className="text-sm text-blue-700 mt-1">
-                Perfect for fashion retailers, fabric suppliers, accessory sellers, and thrift stores. 
-                List your products and reach customers across Africa.
+                Set up your basic account information. You'll verify your email before proceeding.
               </p>
             </div>
           </div>
@@ -868,7 +883,7 @@ const SellerSignup = () => {
           <div className="flex items-start">
             <Store className="h-5 w-5 text-green-600 mt-0.5 mr-2" />
             <div>
-              <h4 className="text-sm font-medium text-green-800">Setup Your Fashion Shop</h4>
+              <h4 className="text-sm font-medium text-green-800">Step 2: Setup Your Fashion Shop</h4>
               <p className="text-sm text-green-700 mt-1">
                 Create your online storefront where customers can browse and purchase your fashion products.
               </p>
@@ -1172,7 +1187,7 @@ const SellerSignup = () => {
           </div>
         ) : (
           <>
-            Complete Setup & Start Selling
+            Continue to Bank Connection
             <ArrowRight className="ml-2 h-4 w-4" />
           </>
         )}
@@ -1337,7 +1352,7 @@ const SellerSignup = () => {
           {/* Progress Stepper */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
-              {[1, 2].map((step) => (
+              {[1, 2, 3].map((step) => (
                 <div key={step} className="flex items-center">
                   <div
                     className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
@@ -1350,7 +1365,7 @@ const SellerSignup = () => {
                   >
                     {currentStep > step ? <Check className="h-5 w-5" /> : step}
                   </div>
-                  {step < 2 && (
+                  {step < 3 && (
                     <div
                       className={`w-32 h-1 mx-4 ${
                         currentStep > step ? 'bg-green-600' : 'bg-gray-200'
@@ -1363,10 +1378,13 @@ const SellerSignup = () => {
             
             <div className="flex justify-between text-sm font-medium">
               <span className={currentStep === 1 ? 'text-blue-700' : currentStep > 1 ? 'text-green-600' : 'text-gray-500'}>
-                Create Seller Account
+                Create Account
               </span>
-              <span className={currentStep === 2 ? 'text-blue-700' : 'text-gray-500'}>
-                Setup Your Product Shop
+              <span className={currentStep === 2 ? 'text-blue-700' : currentStep > 2 ? 'text-green-600' : currentStep < 2 ? 'text-gray-500' : 'text-gray-500'}>
+                Setup Shop
+              </span>
+              <span className={currentStep === 3 ? 'text-blue-700' : 'text-gray-500'}>
+                Connect Bank
               </span>
             </div>
           </div>
@@ -1376,8 +1394,12 @@ const SellerSignup = () => {
             renderOTPVerification()
           ) : currentStep === 1 ? (
             renderStep1()
-          ) : (
+          ) : currentStep === 2 ? (
             renderStep2()
+          ) : currentStep === 3 && (
+            <ConnectBank 
+            sellerId={sellerId} shopId={shopId} onBankConnected={handleBankConnected} 
+            />
           )}
 
           {/* Login Link */}
@@ -1418,7 +1440,7 @@ const SellerSignup = () => {
           </div>
           
           <div className="p-4 bg-white rounded-xl border border-gray-200 text-center shadow-sm">
-            <Shield className="h-8 w-8 text-amber-600 mx-auto mb-2" />
+            <Banknote className="h-8 w-8 text-amber-600 mx-auto mb-2" />
             <h4 className="text-sm font-medium text-gray-900 mb-1">Secure Payments</h4>
             <p className="text-xs text-gray-600">Multiple payment options with fraud protection</p>
           </div>

@@ -424,11 +424,8 @@ export const createShop = async (
   next: NextFunction
 ) => {
   try {
-    const sellerId = req.user?.id;
     
-    if (!sellerId) {
-      return next(new ValidationError("Authentication required"));
-    }
+
 
     const {
       name,
@@ -447,7 +444,8 @@ export const createShop = async (
       returnPolicy,
       shippingPolicy,
       customOrderPolicy,
-      privacyPolicy
+      privacyPolicy,
+      sellerId
     } = req.body;
 
     // Required field validation
