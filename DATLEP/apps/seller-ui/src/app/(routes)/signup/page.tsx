@@ -1407,7 +1407,7 @@ const SellerSignup = () => {
             <p className="text-sm text-gray-600">
               Already have a seller account?{' '}
               <Link
-                href="/seller/login"
+                href="/login"
                 className="font-medium text-blue-700 hover:text-blue-800 transition-colors"
               >
                 Sign in here

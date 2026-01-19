@@ -359,7 +359,7 @@ export const verifySeller = async (
   }
 };
 
-// Create a new shop for seller
+
 // export const createShop = async (
 //   req: Request,
 //   res: Response,
@@ -526,12 +526,292 @@ export const createShop = async (
   }
 };
 
+// skipping payment setup
+// export const skipPaymentSetup = async  (  req: Request,
+//   res: Response,
+//   next: NextFunction) =>{
+//     try {
+      
+//     } catch (error) {
+//       next(error)
+//     }
+//   }
 
 
 
 
+export const skipPaymentSetup = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { sellerId, shopId } = req.body 
+    
+    // Validate required fields
+    if (!sellerId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Seller ID is required'
+      });
+    }
 
+    // Optional: Verify the authenticated user owns this seller account
+    // Uncomment if you have authentication middleware
+   
+    // if (req.user?.sellerId !== sellerId && req.user?.id !== sellerId) {
+    //   return res.status(403).json({
+    //     success: false,
+    //     message: 'Unauthorized to skip payment for this seller'
+    //   });
+    // }
+    
 
+    // Find the seller
+    const seller = await Seller.findById(sellerId);
+    
+    if (!seller) {
+      return res.status(404).json({
+        success: false,
+        message: 'Seller not found'
+      });
+    }
+
+    // Check if payment is already set up
+    if (seller.isPaymentSetup) {
+      return res.status(400).json({
+        success: false,
+        message: 'Payment is already set up. Please disconnect first if you want to skip.'
+      });
+    }
+
+    // Update seller payment status
+    const updateData: any = {
+      isPaymentSetup: false,
+      bankType: 'skipped',
+      updatedAt: new Date()
+    };
+
+    // Optionally clear existing payment details if they exist
+    if (seller.paymentDetails || seller.flutterwaveMerchantId || 
+        seller.paystackCustomerCode || seller.stripeAccountId) {
+      updateData.paymentDetails = null;
+      updateData.flutterwaveMerchantId = null;
+      updateData.paystackCustomerCode = null;
+      updateData.stripeAccountId = null;
+    }
+
+    const updatedSeller = await Seller.findByIdAndUpdate(
+      sellerId,
+      updateData,
+      { new: true }
+    ).select('-password'); // Exclude password from response
+
+    // If shopId is provided, also update shop status
+    let updatedShop = null;
+    if (shopId) {
+      try {
+        updatedShop = await Shop.findByIdAndUpdate(
+          shopId,
+          {
+            isPaymentSetup: false,
+            paymentStatus: 'skipped',
+            updatedAt: new Date()
+          },
+          { new: true }
+        );
+      } catch (shopError) {
+        console.warn('Could not update shop payment status:', shopError);
+        // Continue even if shop update fails
+      }
+    }
+
+    // Log the action (optional)
+    console.log(`Payment setup skipped for seller: ${sellerId}, shop: ${shopId || 'N/A'}`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Payment setup skipped successfully. You can set it up later in your dashboard.',
+      data: {
+        seller: updatedSeller,
+        shop: updatedShop,
+        isPaymentSetup: false,
+        skippedAt: new Date().toISOString()
+      }
+    });
+
+  } catch (error: any) {
+  console.error('Error skipping payment setup:', {
+    error: error.message,
+    stack: error.stack,
+    body: req.body
+  });
+
+  if (error.name === 'CastError') {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid seller ID format'
+    });
+  }
+
+  if (error.name === 'ValidationError') {
+    return res.status(400).json({
+      success: false,
+      message: 'Validation error',
+      errors: Object.values(error.errors).map((err: any) => err.message)
+    });
+  }
+
+  return next(error); // ✅ FIX
+}
+}
+
+// paystack setup
+export const paystackSetup = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { sellerId } = req.body;
+
+    // 1. Validate input
+    if (!sellerId) {
+      res.status(400).json({
+        success: false,
+        message: "Seller ID is required"
+      });
+      return;
+    }
+
+    // 2. Find seller
+    const seller = await Seller.findById(sellerId);
+
+    if (!seller) {
+      res.status(404).json({
+        success: false,
+        message: "Seller not found"
+      });
+      return;
+    }
+
+    // 3. Prevent duplicate setup
+    if (seller.isPaymentSetup) {
+      res.status(400).json({
+        success: false,
+        message: "Payment method already set up"
+      });
+      return;
+    }
+
+    // 4. Generate Paystack Connect OAuth URL
+    const redirectUrl =
+      "https://connect.paystack.com/oauth/authorize?" +
+      `response_type=code` +
+      `&client_id=${process.env.PAYSTACK_PUBLIC_KEY}` +
+      `&redirect_uri=${process.env.PAYSTACK_CALLBACK_URL}` +
+      `&scope=integration` +
+      `&state=${seller._id}`;
+
+    // 5. Respond to frontend
+    res.status(200).json({
+      success: true,
+      provider: "paystack",
+      redirectUrl
+    });
+    return;
+
+  } catch (error) {
+    return next(error);
+  }
+};
+
+// login seller
+export const sellerLogin = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email, password } = req.body;
+    
+    if (!email || !password) {
+      return next(new ValidationError("Email and password are required"));
+    } 
+    
+    const seller = await Seller.findOne({ email });
+    if (!seller) {
+      return next(new AuthenticationError("Invalid email or password"));
+    }
+    
+    // Verify password
+    const isMatch = await bcrypt.compare(password, seller.password!);
+    if (!isMatch) {
+      return next(new AuthenticationError("Invalid email or password"));
+    }
+
+    // Check if seller is verified/active
+    if (!seller.emailVerified) {
+      return next(new AuthenticationError("Please verify your email first"));
+    }
+
+    // Generate access and refresh tokens 
+    const accessToken = jwt.sign({
+      id: seller._id, 
+      email: seller.email,
+      role: 'seller'
+    }, process.env.ACCESS_TOKEN_SECRET!, { expiresIn: "15m" });
+
+    const refreshToken = jwt.sign({
+      id: seller._id, 
+      email: seller.email,
+      role: 'seller'
+    }, process.env.REFRESH_TOKEN_SECRET!, { expiresIn: "7d" });
+
+    // Send tokens in response
+    setCookie(res, 'refreshToken', refreshToken);
+    setCookie(res, 'accessToken', accessToken);
+    
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      seller: {
+        id: seller._id,
+        name: seller.name,
+        email: seller.email,
+        sellerType: seller.sellerType,
+        shopId: seller.shop,
+        isVerified: seller.isVerified,
+        emailVerified: seller.emailVerified,
+        verificationStatus: seller.verificationStatus
+      },
+      token: accessToken // Also send in response for frontend storage
+    });
+
+  } catch (error) {
+    return next(error); 
+  }
+};
+
+// get logged in seller
+export const getLoggedInSeller = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const user = req.user; // Assume user is attached to req in isAuthenticated middleware
+    if (!user) {
+      return next(new AuthenticationError("User not found"));
+    }
+    res.status(201).json({
+      success: true,
+      user,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
 
 
 

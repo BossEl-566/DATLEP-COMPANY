@@ -1,6 +1,6 @@
 import express from 'express';
 import { Router } from 'express';
-import { createShop, getUser, loginUser, refreshToken, registerSeller, resetUserPassword, userForgotPassword, userRegistration, verifySeller, verifyUserForgotPassword, verifyUserOtp } from '../controllers/auth.controller';
+import { createShop, getLoggedInSeller, getUser, loginUser, paystackSetup, refreshToken, registerSeller, resetUserPassword, sellerLogin, skipPaymentSetup, userForgotPassword, userRegistration, verifySeller, verifyUserForgotPassword, verifyUserOtp } from '../controllers/auth.controller';
 import isAuthenticated from '../../../../packages/middleware/isAuthenticated';
 
 
@@ -18,6 +18,10 @@ router.post('/reset-password-user', resetUserPassword);
 router.post('/seller-registration', registerSeller);
 router.post('/verify-seller-otp', verifySeller);
 router.post('/create-shop', createShop);
+router.post('/skip-seller-payment', skipPaymentSetup )
+router.post('/paystack-webhook', paystackSetup );
+router.post('/seller-login', sellerLogin);
+router.get('/logged-in-seller', isAuthenticated, getLoggedInSeller);
 
 
 export default router;
