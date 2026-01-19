@@ -1,6 +1,6 @@
 import express from 'express';
 import { Router } from 'express';
-import { getUser, loginUser, refreshToken, resetUserPassword, userForgotPassword, userRegistration, verifyUserForgotPassword, verifyUserOtp } from '../controllers/auth.controller';
+import { createShop, getUser, loginUser, refreshToken, registerSeller, resetUserPassword, userForgotPassword, userRegistration, verifySeller, verifyUserForgotPassword, verifyUserOtp } from '../controllers/auth.controller';
 import isAuthenticated from '../../../../packages/middleware/isAuthenticated';
 
 
@@ -15,6 +15,9 @@ router.get('/logged-in-user', isAuthenticated, getUser);
 router.post('/forgot-password-user', userForgotPassword);
 router.post('/verify-forgot-password-otp', verifyUserForgotPassword);
 router.post('/reset-password-user', resetUserPassword);
+router.post('/seller-registration', registerSeller);
+router.post('/verify-seller-otp', verifySeller);
+router.post('/create-shop', createShop);
 
 
 export default router;

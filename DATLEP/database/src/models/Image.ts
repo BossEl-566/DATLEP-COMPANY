@@ -14,7 +14,12 @@ const ImageSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'User',
       unique: true
-    }
+    },
+    shopId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Shop',
+      unique: true
+    },
   },
   { timestamps: true }
 );

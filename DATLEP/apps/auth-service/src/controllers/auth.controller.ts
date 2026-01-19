@@ -9,7 +9,7 @@ import {
   verifyForgotPasswordOtp,
   verifyOtp
 } from "../utils/auth.helper";
-import { User } from "@datlep/database";
+import { Seller, Shop, User } from "@datlep/database";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { setCookie } from "../utils/cookies/setCookie";
@@ -261,3 +261,279 @@ export const resetUserPassword = async (
     return next(error);
   }
 };
+
+// register a new seller
+export const registerSeller = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const {
+      name,
+      email,
+      password,
+      phone,
+      city,
+      country
+    } = req.body;
+
+    if (!name || !email || !password || !phone || !city || !country) {
+      return next(
+        new ValidationError(
+          'Name, email, password, phone, city, and country are required'
+        )
+      );
+    }
+
+    const existingSeller = await Seller.findOne({ email });
+    if (existingSeller) {
+      return next(new ValidationError('Seller with this email already exists'));
+    }
+
+    await checkOtpRestriction(email, next);
+    await trackOtpRequest(email, next);
+
+    // 🔐 Send real OTP (email / SMS)
+    await sendOtp(name, email, 'seller-activation-mail');
+
+    res.status(200).json({
+      success: true,
+      message: 'OTP sent to email for verification',
+      email
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// verify seller OTP
+export const verifySeller = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email, otp, password, ...sellerData } = req.body;
+
+    if (!email || !otp || !password) {
+      return next(
+        new ValidationError('Email, OTP and password are required')
+      );
+    }
+
+    // ✅ Verify OTP using production system
+    await verifyOtp(email, otp, next);
+    
+
+    const existingSeller = await Seller.findOne({ email });
+    if (existingSeller) {
+      return next(new ValidationError('Seller with this email already exists'));
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const seller = await Seller.create({
+      ...sellerData,
+      email,
+      password: hashedPassword,
+      phoneNumber: sellerData.phone,
+      emailVerified: true,
+      isVerified: false,
+      verificationStatus: 'pending'
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Seller registered successfully',
+      seller: {
+        id: seller._id,
+        name: seller.name,
+        email: seller.email,
+        sellerType: seller.sellerType
+      },
+      
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Create a new shop for seller
+// export const createShop = async (
+//   req: Request,
+//   res: Response,
+//   next: NextFunction
+// ) => {
+//   try {
+//     const {
+//       name,
+//       bio,
+//       category,
+//       seller,
+//       address,
+//       openingHours,
+//       shopType,
+//       timezone,
+//       website,
+//       socialLinks
+//     } = req.body;
+
+//     if (!name || !bio || !category || !seller || !address?.city || !address?.country || !openingHours || openingHours.length === 0) {
+//       return next(new ValidationError("All fields are required to create a shop"));
+//     }
+
+//     const shop = await Shop.create({
+//       name,
+//       bio,
+//       category,
+//       seller,
+//       address: {
+//         city: address.city,
+//         country: address.country,
+//         street: address.street || '',
+//         state: address.state || '',
+//         postalCode: address.postalCode || '',
+//         coordinates: address.coordinates || { type: 'Point', coordinates: [0, 0] }
+//       },
+//       openingHours,
+//       shopType: shopType || 'both',
+//       timezone: timezone || '',
+//       website: website || '',
+//       socialLinks: socialLinks || []
+//     });
+
+  
+
+//     res.status(201).json(shop);
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
+
+
+
+
+
+
+// Create a new shop for seller
+export const createShop = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const sellerId = req.user?.id;
+    
+    if (!sellerId) {
+      return next(new ValidationError("Authentication required"));
+    }
+
+    const {
+      name,
+      bio,
+      category,
+      address,
+      openingHours,
+      shopType = 'both',
+      timezone = 'Africa/Lagos',
+      website,
+      socialLinks = [],
+      businessRegistration,
+      yearsInBusiness,
+      specialties = [],
+      portfolioLink,
+      returnPolicy,
+      shippingPolicy,
+      customOrderPolicy,
+      privacyPolicy
+    } = req.body;
+
+    // Required field validation
+    if (!name || !bio || !category || !address?.city || !address?.country) {
+      return next(new ValidationError("Name, bio, category, city and country are required"));
+    }
+
+    // Validate opening hours
+    if (!openingHours || openingHours.length === 0) {
+      return next(new ValidationError("Opening hours are required"));
+    }
+
+    // Check if seller already has a shop
+    const existingShop = await Shop.findOne({ seller: sellerId });
+    if (existingShop) {
+      return next(new ValidationError("You already have a shop"));
+    }
+
+    // Generate slug from name
+    const slug = name
+      .toLowerCase()
+      .replace(/[^\w\s]/gi, '')
+      .replace(/\s+/g, '-');
+
+    // Check if slug is unique
+    const slugExists = await Shop.findOne({ slug });
+    if (slugExists) {
+      return next(new ValidationError("A shop with similar name already exists. Please choose a different name."));
+    }
+
+    // Create shop
+    const shop = await Shop.create({
+      name,
+      slug,
+      bio,
+      category,
+      seller: sellerId,
+      address: {
+        city: address.city,
+        country: address.country,
+        street: address.street || '',
+        state: address.state || '',
+        postalCode: address.postalCode || '',
+        coordinates: address.coordinates || { type: 'Point', coordinates: [0, 0] }
+      },
+      openingHours,
+      shopType,
+      timezone,
+      website: website || '',
+      socialLinks,
+      businessRegistration,
+      yearsInBusiness: yearsInBusiness || '<1',
+      specialties,
+      portfolioLink,
+      returnPolicy,
+      shippingPolicy,
+      customOrderPolicy,
+      privacyPolicy
+    });
+
+    // Update seller with shop reference
+    await Seller.findByIdAndUpdate(sellerId, { shop: shop._id });
+
+    res.status(201).json({
+      message: "Shop created successfully",
+      shop: {
+        id: shop._id,
+        name: shop.name,
+        slug: shop.slug,
+        category: shop.category,
+        shopType: shop.shopType,
+        address: shop.address
+      }
+    });
+  } catch (error) {
+    
+    next(error);
+  }
+};
+
+
+
+
+
+
+
+
+
+

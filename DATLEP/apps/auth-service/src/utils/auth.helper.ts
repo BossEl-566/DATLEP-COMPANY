@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import { Request, Response, NextFunction } from 'express';
 import { ValidationError } from '../../../../packages/error-handler';
 import redis from '../../../../packages/libs/redis';
-import { User } from '@datlep/database';
+import { Seller, User } from '@datlep/database';
 import { sendEmail } from './sendMail';
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -93,7 +93,7 @@ export const handleForgotPassword = async (
         }  
         
         // Find user/seller in DB
-        const user = await User.findOne({ email }).lean();
+        const user = userType === 'user' ? await User.findOne({ email }).lean() : await Seller.findOne({ email }).lean();
         if (!user) {
             throw new ValidationError(`${userType} with this email does not exist`);
         }
@@ -101,7 +101,7 @@ export const handleForgotPassword = async (
         // Check OTP restrictions - these will throw errors if restrictions exist
         await checkOtpRestriction(email, next);
         await trackOtpRequest(email, next);
-        await sendOtp(user.name, email, 'forgot-password-mail');
+        await sendOtp(user.name, email, userType === 'user' ? 'user-forgot-password-mail' : 'seller-forgot-password-mail');
         
         res.status(200).json({
             message: 'OTP sent to email for password reset'
