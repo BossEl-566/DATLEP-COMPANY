@@ -5,7 +5,7 @@ import axiosInstance from "../utils/axiosInstance";
 // fetch user data from the API
 const fetchSeller = async () => {
   const response = await axiosInstance.get("/api/logged-in-seller");
-  return response.data.seller;
+  return response.data.user;
 }
 
 export const useSeller = () => {

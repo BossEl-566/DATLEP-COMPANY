@@ -31,6 +31,7 @@ import {
 import SidebarItem from './sidebar.item'
 import { motion, AnimatePresence } from 'framer-motion'
 
+
 function SidebarWrapper() {
     const {activeSidebar, setActiveSidebar} = useSidebar()
     const pathName = usePathname()
@@ -43,6 +44,8 @@ function SidebarWrapper() {
     })
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
     const [hoveredItem, setHoveredItem] = useState<string | null>(null)
+
+    console.log(seller)
 
     useEffect(() => {
         const pathSegments = pathName.split('/')
