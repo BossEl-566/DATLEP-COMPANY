@@ -26,11 +26,7 @@ import {
   ChevronRight,
   BarChart3,
   Users,
-  TrendingUp,
   FileText,
-  Shield,
-  HelpCircle,
-  ExternalLink
 } from 'lucide-react'
 import SidebarItem from './sidebar.item'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -310,6 +306,116 @@ function SidebarWrapper() {
                             className="ml-2 border-l border-gray-200 pl-2 space-y-1"
                         >
                             {productItems.map((item) => (
+                                <div key={item.id} className="relative">
+                                    <SidebarItem
+                                        icon={React.cloneElement(item.icon, { 
+                                            className: `w-4 h-4 ${getIconColor(item.id)}`
+                                        })}
+                                        title={sidebarCollapsed ? '' : item.title}
+                                        isActive={activeSidebar === item.id}
+                                        href={item.href}
+                                        className={getItemClass(item.id)}
+                                        onMouseEnter={() => setHoveredItem(item.id)}
+                                        onMouseLeave={() => setHoveredItem(null)}
+                                        collapsed={sidebarCollapsed}
+                                    />
+                                    {sidebarCollapsed && hoveredItem === item.id && (
+                                        <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg z-50 whitespace-nowrap">
+                                            {item.title}
+                                            <div className="absolute left-0 top-1/2 -translate-x-1 -translate-y-1/2 w-2 h-2 bg-gray-900 rotate-45"></div>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </motion.div>
+                    )}
+                </div>
+
+                {/* Events */}
+                <div className="mb-6">
+                    <div 
+                        className="flex items-center justify-between px-2 mb-3 cursor-pointer"
+                        onClick={() => toggleMenu('events')}
+                    >
+                        <div className="flex items-center gap-2">
+                            <div className="w-5 h-5 flex items-center justify-center">
+                                <Calendar className="w-4 h-4 text-gray-400" />
+                            </div>
+                            {!sidebarCollapsed && (
+                                <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+                                    Events
+                                </p>
+                            )}
+                        </div>
+                        {!sidebarCollapsed && (
+                            expandedMenus.events ? 
+                                <ChevronDown className="w-3 h-3 text-gray-400" /> : 
+                                <ChevronRight className="w-3 h-3 text-gray-400" />
+                        )}
+                    </div>
+                    
+                    {(!sidebarCollapsed || expandedMenus.events) && expandedMenus.events && (
+                        <motion.div 
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            className="ml-2 border-l border-gray-200 pl-2 space-y-1"
+                        >
+                            {eventItems.map((item) => (
+                                <div key={item.id} className="relative">
+                                    <SidebarItem
+                                        icon={React.cloneElement(item.icon, { 
+                                            className: `w-4 h-4 ${getIconColor(item.id)}`
+                                        })}
+                                        title={sidebarCollapsed ? '' : item.title}
+                                        isActive={activeSidebar === item.id}
+                                        href={item.href}
+                                        className={getItemClass(item.id)}
+                                        onMouseEnter={() => setHoveredItem(item.id)}
+                                        onMouseLeave={() => setHoveredItem(null)}
+                                        collapsed={sidebarCollapsed}
+                                    />
+                                    {sidebarCollapsed && hoveredItem === item.id && (
+                                        <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg z-50 whitespace-nowrap">
+                                            {item.title}
+                                            <div className="absolute left-0 top-1/2 -translate-x-1 -translate-y-1/2 w-2 h-2 bg-gray-900 rotate-45"></div>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </motion.div>
+                    )}
+                </div>
+
+                {/* Communications */}
+                <div className="mb-6">
+                    <div 
+                        className="flex items-center justify-between px-2 mb-3 cursor-pointer"
+                        onClick={() => toggleMenu('communications')}
+                    >
+                        <div className="flex items-center gap-2">
+                            <div className="w-5 h-5 flex items-center justify-center">
+                                <MessageSquare className="w-4 h-4 text-gray-400" />
+                            </div>
+                            {!sidebarCollapsed && (
+                                <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+                                    Communications
+                                </p>
+                            )}
+                        </div>
+                        {!sidebarCollapsed && (
+                            expandedMenus.communications ? 
+                                <ChevronDown className="w-3 h-3 text-gray-400" /> : 
+                                <ChevronRight className="w-3 h-3 text-gray-400" />
+                        )}
+                    </div>
+                    
+                    {(!sidebarCollapsed || expandedMenus.communications) && expandedMenus.communications && (
+                        <motion.div 
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            className="ml-2 border-l border-gray-200 pl-2 space-y-1"
+                        >
+                            {communicationItems.map((item) => (
                                 <div key={item.id} className="relative">
                                     <SidebarItem
                                         icon={React.cloneElement(item.icon, { 
