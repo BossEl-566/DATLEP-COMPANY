@@ -45,17 +45,20 @@ axiosInstance.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        await axios.post(
-          `${process.env.NEXT_PUBLIC_SERVER_URL}/api/refresh-token`,
+        const res =await axios.post(
+          `${process.env.NEXT_PUBLIC_SERVER_URL}/api/seller-refresh-token`,
           {},
           { withCredentials: true }
         );
+        console.log(res);
+        
 
         isRefreshing = false;
         onRefreshed();
 
         return axiosInstance(originalRequest);
       } catch (refreshError) {
+        console.error("Refresh token error:", refreshError);
         isRefreshing = false;
         refreshSubscribers = [];
         handleLogout();

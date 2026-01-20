@@ -75,11 +75,11 @@ const SellerLogin = () => {
 
   // Create axios instance with base URL
   const api = axios.create({
-    baseURL: `${API_BASE_URL}/api`,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
+  baseURL: `${API_BASE_URL}/api`,
+  headers: { 'Content-Type': 'application/json' },
+  withCredentials: true, // ✅ important
+});
+
 
   // Mutation for seller login
   const loginMutation = useMutation({

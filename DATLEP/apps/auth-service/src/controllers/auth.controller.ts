@@ -116,8 +116,9 @@ export const loginUser = async (
     }, process.env.REFRESH_TOKEN_SECRET!, { expiresIn: "7d" });
 
     // Send tokens in response
-    setCookie(res, 'refreshToken', refreshToken);
-    setCookie(res, 'accessToken', accessToken);
+    setCookie(req, res, 'user_refreshToken', refreshToken);
+    setCookie(req, res, 'user_accessToken', accessToken);
+
     
     res.status(200).json({
       message: "Login successful",
@@ -176,7 +177,7 @@ export const refreshToken = async (
       { expiresIn: "15m" }
     );
 
-    setCookie(res, "accessToken", newAccessToken);
+    setCookie(req, res, "accessToken", newAccessToken);
 
     return res.status(200).json({
       success: true,
@@ -784,8 +785,13 @@ export const sellerLogin = async (
     }, process.env.REFRESH_TOKEN_SECRET!, { expiresIn: "7d" });
 
     // Send tokens in response
-    setCookie(res, 'refreshToken', refreshToken);
-    setCookie(res, 'accessToken', accessToken);
+    
+    setCookie(req, res, 'seller_refreshToken', refreshToken);
+    setCookie(req, res, 'seller_accessToken', accessToken);
+
+
+console.log("SETTING SELLER COOKIES");
+
     
     res.status(200).json({
       success: true,
@@ -825,6 +831,52 @@ export const getLoggedInSeller = async (
     });
   } catch (error) {
     return next(error);
+  }
+};
+
+// seller refresh token 
+export const refreshSellerToken = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const refreshToken = req.cookies.seller_refreshToken;
+
+    if (!refreshToken) {
+      res.status(401).json({ message: "No seller refresh token provided" });
+      return;
+    }
+
+    const decoded = jwt.verify(
+      refreshToken,
+      process.env.REFRESH_TOKEN_SECRET!
+    ) as { id: string; role: "seller" };
+
+    if (decoded.role !== "seller") {
+      res.status(403).json({ message: "Invalid seller refresh token" });
+      return;
+    }
+
+    const seller = await Seller.findById(decoded.id);
+    if (!seller) {
+      res.status(401).json({ message: "Seller not found" });
+      return;
+    }
+
+    const newAccessToken = jwt.sign(
+      { id: seller._id, role: "seller" },
+      process.env.ACCESS_TOKEN_SECRET!,
+      { expiresIn: "15m" }
+    );
+
+    setCookie(req, res, "seller_accessToken", newAccessToken);
+
+
+    res.status(200).json({ success: true });
+    return;
+  } catch (error) {
+    next(error);
   }
 };
 
