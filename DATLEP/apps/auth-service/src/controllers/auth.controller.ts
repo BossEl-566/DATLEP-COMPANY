@@ -133,7 +133,7 @@ export const loginUser = async (
   }
 }; 
 
-// refresh User Token
+// refresh Token
 export const refreshToken = async (
   req: Request,
   res: Response,
@@ -144,34 +144,49 @@ export const refreshToken = async (
     if (!refreshToken) {
       throw new AuthenticationError("No refresh token provided");
     }
-    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET!) as { id: string, role: string };
-    if (!decoded || !decoded.id || !decoded.role) {
-  return next(new AuthenticationError("Invalid refresh token"));
-}
 
-    // let account;
-    // if (decoded.role === 'user') 
-    const user = await User.findById(decoded.id).lean();
-    if (!user) {
-      return next(new AuthenticationError("User not found"));
+    const decoded = jwt.verify(
+      refreshToken,
+      process.env.REFRESH_TOKEN_SECRET!
+    ) as { id: string; role: "user" | "seller" };
+
+    if (!decoded?.id || !decoded?.role) {
+      throw new AuthenticationError("Invalid refresh token");
     }
-    // Generate new access token
-    const newAccessToken = jwt.sign({
-      id: decoded.id, 
-      role: decoded.role },
-      process.env.ACCESS_TOKEN_SECRET!, 
-      { expiresIn: "15m" }
-    ); 
 
-    setCookie(res, 'accessToken', newAccessToken);
+    let account;
+
+    if (decoded.role === "seller") {
+      account = await Seller.findById(decoded.id).lean();
+      if (!account) {
+        throw new AuthenticationError("Seller not found");
+      }
+    } else if (decoded.role === "user") {
+      account = await User.findById(decoded.id).lean();
+      if (!account) {
+        throw new AuthenticationError("User not found");
+      }
+    } else {
+      throw new AuthenticationError("Invalid role");
+    }
+
+    const newAccessToken = jwt.sign(
+      { id: decoded.id, role: decoded.role },
+      process.env.ACCESS_TOKEN_SECRET!,
+      { expiresIn: "15m" }
+    );
+
+    setCookie(res, "accessToken", newAccessToken);
+
     return res.status(200).json({
-      success: true });
-    
+      success: true,
+    });
+
   } catch (error) {
     return next(error);
-    
   }
-}; 
+};
+
 
 // get logged in user details
 export const getUser = async (

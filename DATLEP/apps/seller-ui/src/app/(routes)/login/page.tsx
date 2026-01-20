@@ -161,7 +161,7 @@ const SellerLogin = () => {
         // Redirect after delay
         setTimeout(() => {
           if (result.seller?.shopId) {
-            router.push('/seller/dashboard');
+            router.push('/dashboard');
           } else {
             router.push('/seller/setup-shop');
           }
