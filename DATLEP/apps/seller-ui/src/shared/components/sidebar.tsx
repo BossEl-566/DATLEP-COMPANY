@@ -92,7 +92,7 @@ function SidebarWrapper() {
             id: 'create-product',
             title: 'Create Product',
             icon: <PlusCircle className="w-5 h-5" />,
-            href: '/seller/products/create'
+            href: '/dashboard/create-product'
         },
         {
             id: 'products',
@@ -140,7 +140,7 @@ function SidebarWrapper() {
             id: 'create-event',
             title: 'Create Event',
             icon: <PlusCircle className="w-5 h-5" />,
-            href: '/seller/events/create'
+            href: '/dashboard/events/create'
         },
         {
             id: 'events',
