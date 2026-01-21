@@ -4,6 +4,7 @@ import { errorMiddleware } from "../../../packages/error-handler/error-middlewar
 import cookieParser from "cookie-parser";
 import router from "./routes/auth.router";
 import { connectDatabase } from "@datlep/database";
+import { seedSiteConfig } from "./controllers/initializeSiteConfig";
 
 
 
@@ -34,6 +35,7 @@ const startServer = async () => {
   try {
     // ⚡ Connect to MongoDB first
     await connectDatabase(process.env.MONGO_URI!);
+    seedSiteConfig();
 
     app.listen(port, () => {
       console.log(`Auth Service listening at http://localhost:${port}/api`);

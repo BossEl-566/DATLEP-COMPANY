@@ -6,3 +6,5 @@ export * from "./models/Seller";
 export * from "./models/Document";
 export * from "./models/ShopReview";
 export * from "./models/BespokeCreator";
+export * from "./models/SiteConfig";
+

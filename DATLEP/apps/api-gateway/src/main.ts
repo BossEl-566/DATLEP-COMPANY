@@ -49,6 +49,7 @@ app.get('/gateway-health', (req, res) => {
 // Proxy to auth-service (example)
 // ----------------------
 app.use('/', proxy('http://localhost:6001'));
+app.use('/product', proxy('http://localhost:6002'));
 
 // ----------------------
 // Start Server
