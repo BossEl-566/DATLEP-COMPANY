@@ -83,7 +83,7 @@ function SidebarWrapper() {
             id: 'analytics',
             title: 'Analytics',
             icon: <BarChart3 className="w-5 h-5" />,
-            href: '/seller/analytics'
+            href: '/dashboard/analytics'
         }
     ]
 
@@ -98,19 +98,19 @@ function SidebarWrapper() {
             id: 'products',
             title: 'All Products',
             icon: <List className="w-5 h-5" />,
-            href: '/seller/products'
+            href: '/dashboard/products'
         },
         {
             id: 'inventory',
             title: 'Inventory',
             icon: <Package className="w-5 h-5" />,
-            href: '/seller/inventory'
+            href: '/dashboard/inventory'
         },
         {
             id: 'categories',
             title: 'Categories',
             icon: <Tag className="w-5 h-5" />,
-            href: '/seller/categories'
+            href: '/dashboard/categories'
         }
     ]
 
@@ -119,19 +119,19 @@ function SidebarWrapper() {
             id: 'orders',
             title: 'Orders',
             icon: <ShoppingCart className="w-5 h-5" />,
-            href: '/seller/orders'
+            href: '/dashboard/orders'
         },
         {
             id: 'payments',
             title: 'Payments',
             icon: <CreditCard className="w-5 h-5" />,
-            href: '/seller/payments'
+            href: '/dashboard/payments'
         },
         {
             id: 'customers',
             title: 'Customers',
             icon: <Users className="w-5 h-5" />,
-            href: '/seller/customers'
+            href: '/dashboard/customers'
         }
     ]
 
@@ -146,7 +146,7 @@ function SidebarWrapper() {
             id: 'events',
             title: 'All Events',
             icon: <Calendar className="w-5 h-5" />,
-            href: '/seller/events'
+            href: '/dashboard/events'
         }
     ]
 
@@ -173,28 +173,28 @@ function SidebarWrapper() {
 
     const extraItems = [
         {
-            id: 'discounts',
+            id: 'discount-code',
             title: 'Discounts',
             icon: <Tag className="w-5 h-5" />,
-            href: '/seller/discounts'
+            href: '/dashboard/discount-code'
         },
         {
             id: 'promotions',
             title: 'Promotions',
             icon: <Percent className="w-5 h-5" />,
-            href: '/seller/promotions'
+            href: '/dashboard/promotions'
         },
         {
             id: 'reports',
             title: 'Reports',
             icon: <FileText className="w-5 h-5" />,
-            href: '/seller/reports'
+            href: '/dashboard/reports'
         },
         {
             id: 'settings',
             title: 'Settings',
             icon: <Settings className="w-5 h-5" />,
-            href: '/seller/settings'
+            href: '/dashboard/settings'
         }
     ]
 
