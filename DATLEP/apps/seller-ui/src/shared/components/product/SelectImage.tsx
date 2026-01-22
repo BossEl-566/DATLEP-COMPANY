@@ -1,11 +1,11 @@
-'use client';
-
 import { useState, useRef } from 'react';
 import { Upload, X, Edit2, AlertCircle, Check } from 'lucide-react';
 import Image from 'next/image';
+import { ImageKitService } from './services/imagekit.service';
+import EnhancementModal from './EnhancementModal';
 
 interface SelectImageProps {
-  onImagesChange: (images: string[]) => void;
+  onImagesChange: (images: { url: string; fileId: string }[]) => void;
   maxImages: number;
   requiredRatio: string;
   onImageEdit: (image: string) => void;
@@ -17,36 +17,60 @@ export default function SelectImage({
   requiredRatio,
   onImageEdit,
 }: SelectImageProps) {
-  const [images, setImages] = useState<string[]>([]);
+  const [images, setImages] = useState<{ url: string; fileId: string }[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string>('');
+  const [selectedImage, setSelectedImage] = useState<{ url: string; fileId: string } | null>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const files = e.target.files;
+  if (!files || uploading) return;
 
-    const newImages: string[] = [];
-    const remainingSlots = maxImages - images.length;
+  setUploading(true);
+  const newImages: { url: string; fileId: string }[] = [];
+  const remainingSlots = maxImages - images.length;
 
-    Array.from(files).slice(0, remainingSlots).forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        newImages.push(result);
-        
-        if (newImages.length === Math.min(files.length, remainingSlots)) {
-          const updatedImages = [...images, ...newImages];
-          setImages(updatedImages);
-          onImagesChange(updatedImages);
-        }
-      };
-      reader.readAsDataURL(file);
-    });
+  try {
+    for (const file of Array.from(files).slice(0, remainingSlots)) {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        newImages.push({
+          url: data.url,
+          fileId: data.fileId,
+        });
+      }
+    }
+
+    const updatedImages = [...images, ...newImages];
+    setImages(updatedImages);
+    onImagesChange(updatedImages);
+  } catch (error) {
+    console.error('Upload error:', error);
+  } finally {
+    setUploading(false);
+  }
+};
+
+
+  // Helper to extract fileId from ImageKit URL
+  const extractFileId = (url: string): string => {
+    const parts = url.split('/');
+    const fileName = parts[parts.length - 1];
+    return fileName.split('.')[0];
   };
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
     
@@ -56,7 +80,7 @@ export default function SelectImage({
       Array.from(files).forEach(file => dataTransfer.items.add(file));
       if (fileInputRef.current) {
         fileInputRef.current.files = dataTransfer.files;
-        handleFileChange({ target: { files: dataTransfer.files } } as any);
+        await handleFileChange({ target: { files: dataTransfer.files } } as any);
       }
     }
   };
@@ -70,16 +94,32 @@ export default function SelectImage({
     setIsDragging(false);
   };
 
-  const removeImage = (index: number) => {
-    const newImages = images.filter((_, i) => i !== index);
-    setImages(newImages);
-    onImagesChange(newImages);
+  const removeImage = async (index: number) => {
+    const imageToRemove = images[index];
+    
+    try {
+      // Delete from ImageKit
+      await fetch('/api/delete-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ fileId: imageToRemove.fileId }),
+      });
+
+      // Remove from local state
+      const newImages = images.filter((_, i) => i !== index);
+      setImages(newImages);
+      onImagesChange(newImages);
+    } catch (error) {
+      console.error('Delete error:', error);
+    }
   };
 
-  const openEditModal = (image: string) => {
+  const openEditModal = (image: { url: string; fileId: string }) => {
     setSelectedImage(image);
     setShowEditModal(true);
-    onImageEdit(image);
+    onImageEdit(image.url);
   };
 
   return (
@@ -89,6 +129,9 @@ export default function SelectImage({
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <AlertCircle size={16} />
           <span>Max {maxImages} images</span>
+          {uploading && (
+            <span className="text-blue-600 animate-pulse">Uploading...</span>
+          )}
         </div>
       </div>
 
@@ -112,7 +155,7 @@ export default function SelectImage({
           isDragging
             ? 'border-blue-500 bg-blue-50'
             : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
-        }`}
+        } ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -124,20 +167,26 @@ export default function SelectImage({
           accept="image/*"
           multiple
           className="hidden"
+          disabled={uploading}
         />
 
         <div className="flex flex-col items-center justify-center gap-4">
           <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-            <Upload className="text-blue-600" size={24} />
+            {uploading ? (
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            ) : (
+              <Upload className="text-blue-600" size={24} />
+            )}
           </div>
           
           <div>
             <button
               type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="text-blue-600 hover:text-blue-700 font-medium"
+              onClick={() => !uploading && fileInputRef.current?.click()}
+              className={`text-blue-600 hover:text-blue-700 font-medium ${uploading ? 'cursor-not-allowed' : ''}`}
+              disabled={uploading}
             >
-              Click to upload
+              {uploading ? 'Uploading...' : 'Click to upload'}
             </button>
             <p className="text-gray-500 text-sm mt-1">or drag and drop</p>
           </div>
@@ -159,7 +208,7 @@ export default function SelectImage({
               <div key={index} className="relative group">
                 <div className="relative aspect-square rounded-lg overflow-hidden border border-gray-200">
                   <Image
-                    src={image}
+                    src={image.url}
                     alt={`Product image ${index + 1}`}
                     fill
                     className="object-cover"
@@ -195,6 +244,24 @@ export default function SelectImage({
             ))}
           </div>
         </div>
+      )}
+
+      {/* Enhancement Modal */}
+      {showEditModal && selectedImage && (
+        <EnhancementModal
+          image={selectedImage}
+          onClose={() => setShowEditModal(false)}
+          onSave={(enhancedUrl) => {
+            // Update the image with enhanced version
+            const updatedImages = images.map(img => 
+              img.fileId === selectedImage.fileId 
+                ? { ...img, url: enhancedUrl }
+                : img
+            );
+            setImages(updatedImages);
+            onImagesChange(updatedImages);
+          }}
+        />
       )}
     </div>
   );

@@ -14,6 +14,12 @@ import { createProduct } from '../../../actions/product.actions';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:5000';
 
+
+type ProductImage = {
+  url: string;
+  fileId: string;
+};
+
 type FormData = {
   title: string;
   shortDescription: string;
@@ -28,7 +34,7 @@ type FormData = {
   stock: number;
   discountCode: string;
   youtubeLink: string;
-  images: string[];
+  images: ProductImage[];
   colors: string[];
   sizes: string[];
   specifications: Record<string, string>;
