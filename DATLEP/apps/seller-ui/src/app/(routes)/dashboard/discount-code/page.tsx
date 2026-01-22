@@ -76,6 +76,7 @@ export default function DiscountCodesPage() {
       await axios.delete(
         `${API_BASE_URL}/product/api/delete-discount-code/${id}`,
         {
+          withCredentials: true,
           headers: { Authorization: `Bearer ${token}` }
         }
       );
@@ -97,6 +98,7 @@ export default function DiscountCodesPage() {
         `${API_BASE_URL}/product/api/update-discount-code/${id}`,
         { isActive: !isActive },
         {
+          withCredentials: true,
           headers: { Authorization: `Bearer ${token}` }
         }
       );
