@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import axios from 'axios';
-import { Save, Plus, Upload, AlertCircle, Check } from 'lucide-react';
+import { Save, Plus, Upload, AlertCircle, Check, Percent, ArrowRight, Tag, DollarSign } from 'lucide-react';
 import SelectImage from '../../../../shared/components/product/SelectImage';
 import SelectColors from '../../../../shared/components/product/SelectColors';
 import DetailedDescription from '../../../../shared/components/product/DetailedDescription';
@@ -35,10 +35,23 @@ type FormData = {
   description: string;
 };
 
+interface DiscountCode {
+  _id: string;
+  public_name: string;
+  discountType: 'percentage' | 'fixed';
+  discountValue: number;
+  discountCode: string;
+  isActive: boolean;
+  expiresAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function CreateProductPage() {
   const [categories, setCategories] = useState<string[]>([]);
   const [subCategories, setSubCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedDiscount, setSelectedDiscount] = useState<DiscountCode | null>(null);
 
   const {
     register,
@@ -46,6 +59,7 @@ export default function CreateProductPage() {
     control,
     watch,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm<FormData>({
     defaultValues: {
@@ -55,7 +69,42 @@ export default function CreateProductPage() {
       colors: [],
       sizes: [],
       specifications: {},
+      discountCode: '',
+      regularPrice: 0,
+      sellPrice: 0,
     },
+  });
+
+  // Fetch active discount codes
+  const { 
+    data: discounts = [], 
+    isLoading: discountsLoading,
+    error: discountsError 
+  } = useQuery<DiscountCode[]>({
+    queryKey: ['activeDiscountCodes'],
+    queryFn: async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await axios.get(
+          `${API_BASE_URL}/product/api/get-discount-code`,
+          {
+            withCredentials: true,
+            headers: { Authorization: `Bearer ${token}` }
+          }
+        );
+        
+        // Filter only active and non-expired discounts
+        const now = new Date();
+        return response.data.filter((discount: DiscountCode) => {
+          const isExpired = discount.expiresAt ? new Date(discount.expiresAt) < now : false;
+          return discount.isActive && !isExpired;
+        });
+      } catch (error) {
+        console.error('Error fetching discount codes:', error);
+        return [];
+      }
+    },
+    refetchOnWindowFocus: false,
   });
 
   // Auto-generate slug from title
@@ -86,6 +135,24 @@ export default function CreateProductPage() {
   }, []);
 
   const selectedCategory = watch('category');
+  const regularPrice = watch('regularPrice') || 0;
+  const sellPrice = watch('sellPrice') || 0;
+  const discountCodeValue = watch('discountCode');
+
+  // Update sell price when discount is applied
+  useEffect(() => {
+    if (selectedDiscount && regularPrice > 0) {
+      let discountedPrice = parseFloat(regularPrice.toString());
+      
+      if (selectedDiscount.discountType === 'percentage') {
+        discountedPrice = regularPrice * (1 - selectedDiscount.discountValue / 100);
+      } else if (selectedDiscount.discountType === 'fixed') {
+        discountedPrice = Math.max(0, regularPrice - selectedDiscount.discountValue);
+      }
+      
+      setValue('sellPrice', parseFloat(discountedPrice.toFixed(2)));
+    }
+  }, [selectedDiscount, regularPrice, setValue]);
 
   // Update subcategories when category changes
   useEffect(() => {
@@ -128,6 +195,42 @@ export default function CreateProductPage() {
   const saveAsDraft = () => {
     // Handle draft save logic
     alert('Saved as draft');
+  };
+
+  const handleDiscountSelect = (discount: DiscountCode) => {
+    setSelectedDiscount(discount);
+    setValue('discountCode', discount.discountCode);
+  };
+
+  const clearDiscount = () => {
+    setSelectedDiscount(null);
+    setValue('discountCode', '');
+    if (regularPrice > 0) {
+      setValue('sellPrice', regularPrice);
+    }
+  };
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'No expiry';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  // Helper function to format price
+  const formatPrice = (price: number | string | undefined): string => {
+    if (price === undefined || price === null) return '0.00';
+    const num = typeof price === 'string' ? parseFloat(price) : price;
+    return isNaN(num) ? '0.00' : num.toFixed(2);
+  };
+
+  // Calculate savings
+  const calculateSavings = () => {
+    const regular = parseFloat(regularPrice.toString()) || 0;
+    const sell = parseFloat(sellPrice.toString()) || 0;
+    return regular - sell;
   };
 
   return (
@@ -449,11 +552,14 @@ export default function CreateProductPage() {
                     {...register('regularPrice', {
                       required: 'Regular price is required',
                       min: { value: 0, message: 'Price must be positive' },
+                      valueAsNumber: true,
                     })}
                     type="number"
                     step="0.01"
+                    min="0"
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="0.00"
+                    defaultValue={0}
                   />
                 </div>
                 {errors.regularPrice && (
@@ -477,15 +583,19 @@ export default function CreateProductPage() {
                     {...register('sellPrice', {
                       required: 'Selling price is required',
                       min: { value: 0, message: 'Price must be positive' },
+                      valueAsNumber: true,
                       validate: (value) => {
-                        const regularPrice = watch('regularPrice');
-                        return value <= regularPrice || 'Selling price cannot exceed regular price';
+                        const regularPriceVal = parseFloat(regularPrice.toString()) || 0;
+                        const sellPriceVal = parseFloat(value.toString()) || 0;
+                        return sellPriceVal <= regularPriceVal || 'Selling price cannot exceed regular price';
                       },
                     })}
                     type="number"
                     step="0.01"
+                    min="0"
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="0.00"
+                    defaultValue={0}
                   />
                 </div>
                 {errors.sellPrice && (
@@ -505,10 +615,13 @@ export default function CreateProductPage() {
                   {...register('stock', {
                     required: 'Stock quantity is required',
                     min: { value: 0, message: 'Stock cannot be negative' },
+                    valueAsNumber: true,
                   })}
                   type="number"
+                  min="0"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="0"
+                  defaultValue={0}
                 />
                 {errors.stock && (
                   <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
@@ -519,16 +632,146 @@ export default function CreateProductPage() {
               </div>
 
               {/* Discount Code */}
-              <div>
+              <div className="md:col-span-2 lg:col-span-1">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Discount Code
+                  Apply Discount Code
                 </label>
-                <input
-                  {...register('discountCode')}
-                  type="text"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="e.g., SUMMER20"
-                />
+                
+                {discountsLoading ? (
+                  <div className="flex items-center justify-center py-3 border border-gray-300 rounded-lg">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                    <span className="ml-2 text-sm text-gray-500">Loading discounts...</span>
+                  </div>
+                ) : discountsError ? (
+                  <div className="text-center py-3 border border-red-300 rounded-lg bg-red-50">
+                    <p className="text-sm text-red-600">Failed to load discounts</p>
+                  </div>
+                ) : discounts.length === 0 ? (
+                  <div className="text-center py-4 border border-gray-300 rounded-lg bg-gray-50">
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <Percent size={18} className="text-gray-400" />
+                      <span className="text-sm font-medium text-gray-700">No active discounts</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mb-3">
+                      Create discounts to apply to your products
+                    </p>
+                    <a
+                      href="/dashboard/discount-code"
+                      className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      Go to Discounts
+                      <ArrowRight size={14} />
+                    </a>
+                  </div>
+                ) : (
+                  <>
+                    <div className="relative">
+                      <div className="flex items-center gap-2">
+                        <select
+                          {...register('discountCode')}
+                          onChange={(e) => {
+                            const selected = discounts.find(d => d.discountCode === e.target.value);
+                            if (selected) {
+                              handleDiscountSelect(selected);
+                            } else {
+                              clearDiscount();
+                            }
+                          }}
+                          value={discountCodeValue || ''}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                          <option value="">No discount</option>
+                          {discounts.map((discount) => (
+                            <option key={discount._id} value={discount.discountCode}>
+                              {discount.public_name} ({discount.discountCode})
+                            </option>
+                          ))}
+                        </select>
+                        {selectedDiscount && (
+                          <button
+                            type="button"
+                            onClick={clearDiscount}
+                            className="px-3 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Remove discount"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
+                      
+                      {selectedDiscount && (
+                        <div className="mt-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <Tag size={16} className="text-blue-600" />
+                              <span className="font-medium text-blue-800">
+                                {selectedDiscount.public_name}
+                              </span>
+                            </div>
+                            <code className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm font-mono">
+                              {selectedDiscount.discountCode}
+                            </code>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <span className="text-gray-600">Discount Type:</span>
+                              <div className="flex items-center gap-1 mt-1">
+                                {selectedDiscount.discountType === 'percentage' ? (
+                                  <>
+                                    <Percent size={12} className="text-blue-500" />
+                                    <span className="font-medium">
+                                      {selectedDiscount.discountValue}% off
+                                    </span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <DollarSign size={12} className="text-green-500" />
+                                    <span className="font-medium">
+                                      ₦{selectedDiscount.discountValue} off
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                            
+                            <div>
+                              <span className="text-gray-600">Expires:</span>
+                              <p className="font-medium mt-1">
+                                {formatDate(selectedDiscount.expiresAt)}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          {regularPrice > 0 && (
+                            <div className="mt-3 pt-3 border-t border-blue-200">
+                              <div className="flex items-center justify-between">
+                                <span className="text-gray-600">Regular Price:</span>
+                                <span className="font-medium">₦{formatPrice(regularPrice)}</span>
+                              </div>
+                              <div className="flex items-center justify-between mt-1">
+                                <span className="text-gray-600">Discounted Price:</span>
+                                <span className="font-medium text-green-600">
+                                  ₦{formatPrice(sellPrice)}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between mt-1">
+                                <span className="text-gray-600">You Save:</span>
+                                <span className="font-medium text-red-600">
+                                  ₦{formatPrice(calculateSavings())}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    
+                    <p className="mt-2 text-xs text-gray-500">
+                      Only active, non-expired discounts are shown
+                    </p>
+                  </>
+                )}
               </div>
             </div>
           </div>
