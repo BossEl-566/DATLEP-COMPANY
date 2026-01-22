@@ -16,7 +16,9 @@ import {
   Calendar,
   Percent,
   DollarSign,
-  Zap
+  Zap,
+  AlertTriangle,
+  Loader2
 } from 'lucide-react';
 import CreateDiscountModal from '../../../../shared/components/discount/CreateDiscountModal';
 
@@ -34,18 +36,19 @@ interface DiscountCode {
   updatedAt: string;
 }
 
-interface CreateDiscountData {
-  public_name: string;
-  discountType: 'percentage' | 'fixed';
-  discountValue: number;
-  discountCode: string;
-  expiresAt?: string;
+interface DeleteModalState {
+  isOpen: boolean;
+  discount: DiscountCode | null;
 }
 
 export default function DiscountCodesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<'all' | 'active' | 'expired'>('all');
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [deleteModal, setDeleteModal] = useState<DeleteModalState>({
+    isOpen: false,
+    discount: null,
+  });
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
@@ -57,11 +60,11 @@ export default function DiscountCodesPage() {
   } = useQuery<DiscountCode[]>({
     queryKey: ['discountCodes'],
     queryFn: async () => {
-      const token = localStorage.getItem('token'); // or your auth method
+      const token = localStorage.getItem('token');
       const response = await axios.get(
         `${API_BASE_URL}/product/api/get-discount-code`,
         {
-            withCredentials: true,
+          withCredentials: true,
           headers: { Authorization: `Bearer ${token}` }
         }
       );
@@ -84,6 +87,7 @@ export default function DiscountCodesPage() {
     onSuccess: () => {
       toast.success('Discount code deleted successfully!');
       queryClient.invalidateQueries({ queryKey: ['discountCodes'] });
+      setDeleteModal({ isOpen: false, discount: null });
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Failed to delete discount code');
@@ -130,6 +134,16 @@ export default function DiscountCodesPage() {
   const isExpired = (expiresAt?: string) => {
     if (!expiresAt) return false;
     return new Date(expiresAt) < new Date();
+  };
+
+  const openDeleteModal = (discount: DiscountCode) => {
+    setDeleteModal({ isOpen: true, discount });
+  };
+
+  const closeDeleteModal = () => {
+    if (!deleteMutation.isPending) {
+      setDeleteModal({ isOpen: false, discount: null });
+    }
   };
 
   // Filter discounts
@@ -191,7 +205,7 @@ export default function DiscountCodesPage() {
             
             {/* Create Button */}
             <button
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => setIsCreateModalOpen(true)}
               className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg hover:shadow-xl"
             >
               <Plus size={20} />
@@ -322,7 +336,7 @@ export default function DiscountCodesPage() {
                 {searchTerm ? 'Try a different search term' : 'Create your first discount code'}
               </p>
               <button
-                onClick={() => setIsModalOpen(true)}
+                onClick={() => setIsCreateModalOpen(true)}
                 className="mt-6 inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 <Plus size={20} />
@@ -462,11 +476,7 @@ export default function DiscountCodesPage() {
                             <Edit2 size={18} />
                           </button>
                           <button
-                            onClick={() => {
-                              if (confirm('Are you sure you want to delete this discount code?')) {
-                                deleteMutation.mutate(discount._id);
-                              }
-                            }}
+                            onClick={() => openDeleteModal(discount)}
                             disabled={deleteMutation.isPending}
                             className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
                             title="Delete"
@@ -485,9 +495,99 @@ export default function DiscountCodesPage() {
 
         {/* Create Discount Modal */}
         <CreateDiscountModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
         />
+
+        {/* Delete Confirmation Modal */}
+        {deleteModal.isOpen && deleteModal.discount && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl w-full max-w-md mx-auto overflow-hidden">
+              <div className="p-6">
+                <div className="flex items-center justify-center mb-4">
+                  <div className="flex items-center justify-center w-12 h-12 bg-red-100 rounded-full">
+                    <AlertTriangle className="text-red-600" size={24} />
+                  </div>
+                </div>
+                
+                <h2 className="text-xl font-bold text-gray-900 text-center mb-2">
+                  Delete Discount Code
+                </h2>
+                
+                <p className="text-gray-600 text-center mb-6">
+                  Are you sure you want to delete this discount code? This action cannot be undone.
+                </p>
+
+                {/* Discount Details */}
+                <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-medium text-gray-700">Code:</span>
+                    <code className="px-2 py-1 bg-gray-200 text-gray-800 rounded font-mono">
+                      {deleteModal.discount.discountCode}
+                    </code>
+                  </div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-medium text-gray-700">Name:</span>
+                    <span className="text-sm text-gray-900">{deleteModal.discount.public_name}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700">Type:</span>
+                    <div className="flex items-center gap-1">
+                      {deleteModal.discount.discountType === 'percentage' ? (
+                        <>
+                          <Percent size={12} />
+                          <span className="text-sm">{deleteModal.discount.discountValue}%</span>
+                        </>
+                      ) : (
+                        <>
+                          <DollarSign size={12} />
+                          <span className="text-sm">₦{deleteModal.discount.discountValue}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Warning Message */}
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="text-yellow-600 flex-shrink-0 mt-0.5" size={18} />
+                    <div>
+                      <p className="text-sm text-yellow-800">
+                        This discount code will be permanently removed. Any products using this code will no longer have the discount applied.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={closeDeleteModal}
+                    disabled={deleteMutation.isPending}
+                    className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => deleteMutation.mutate(deleteModal.discount!._id)}
+                    disabled={deleteMutation.isPending}
+                    className="flex-1 px-4 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                  >
+                    {deleteMutation.isPending ? (
+                      <>
+                        <Loader2 className="animate-spin" size={18} />
+                        Deleting...
+                      </>
+                    ) : (
+                      'Delete Discount'
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

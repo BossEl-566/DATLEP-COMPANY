@@ -104,10 +104,6 @@ export const deleteDiscountCode = async (
       return res.status(404).json({ message: 'Discount code not found' });
     }
 
-    if (discountCode.sellerId.toString() !== sellerId) {
-      return res.status(403).json({ message: 'Forbidden' });
-    }
-
     await Discount.deleteOne({ _id: id });
 
     return res
