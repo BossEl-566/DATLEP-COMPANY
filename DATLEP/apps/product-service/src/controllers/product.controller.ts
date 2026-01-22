@@ -19,12 +19,13 @@ export const getCategory = async(req: Request, res: Response, next: NextFunction
 // Create discount codes
 
 export const createDiscountCodes = async (
-  req: SellerRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const sellerId = req.seller?.id;
+    const sellerId = req.user?._id;
+    console.log('sellerId for the seller:', sellerId);
 
     if (!sellerId) {
       return res.status(401).json({ message: 'Unauthorized seller' });
@@ -47,7 +48,8 @@ export const createDiscountCodes = async (
       discountType,
       discountValue,
       discountCode,
-      sellerId
+      sellerId,
+      expiresAt: new Date(req.body.expiresAt),
     });
 
     await discount.save();
@@ -64,7 +66,8 @@ export const getDiscountCodes = async (
   next: NextFunction
 ) => {
   try {
-    const sellerId = req.seller?.id;
+    const sellerId = req.user?._id;
+    console.log('sellerId for the seller:', sellerId);
     if (!sellerId) {
       return res.status(401).json({ message: 'Unauthorized seller' });
     }
@@ -86,7 +89,7 @@ export const deleteDiscountCode = async (
 ) => {
   try {
     const { id } = req.params;
-    const sellerId = req.seller?.id;
+    const sellerId = req.user?._id;
 
     if (!sellerId) {
       return res.status(401).json({ message: 'Unauthorized seller' });

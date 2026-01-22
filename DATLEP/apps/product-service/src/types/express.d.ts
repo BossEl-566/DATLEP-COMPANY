@@ -6,5 +6,9 @@ export interface SellerPayload {
 }
 
 export interface SellerRequest extends Request {
-  seller?: SellerPayload;
+  user?: {
+    _id: string;
+    role: 'seller';
+    isSeller: boolean;
+  };
 }

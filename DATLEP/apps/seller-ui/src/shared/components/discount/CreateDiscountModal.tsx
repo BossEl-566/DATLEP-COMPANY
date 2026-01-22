@@ -37,22 +37,28 @@ export default function CreateDiscountModal({ isOpen, onClose }: CreateDiscountM
 
   const createMutation = useMutation({
     mutationFn: async (data: CreateDiscountData) => {
-      const token = localStorage.getItem('token');
-      const response = await axios.post(
-        `${API_BASE_URL}/seller/create-discount-code`,
-        {
-          ...data,
-          expiresAt: data.expiresAt ? data.expiresAt.toISOString() : undefined,
-        },
-        {
-          headers: { 
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
-      return response.data;
+  const token = localStorage.getItem('token');
+
+  const response = await axios.post(
+    `${API_BASE_URL}/product/api/create-discount-code`,
+    {
+      ...data,
+      expiresAt: data.expiresAt
+        ? data.expiresAt.toISOString()
+        : undefined,
     },
+    {
+      withCredentials: true,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  return response.data;
+},
+
     onSuccess: () => {
       toast.success('Discount code created successfully!');
       queryClient.invalidateQueries({ queryKey: ['discountCodes'] });
@@ -148,9 +154,9 @@ export default function CreateDiscountModal({ isOpen, onClose }: CreateDiscountM
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-md mx-auto overflow-hidden">
-        {/* Modal Header */}
-        <div className="px-6 py-4 border-b border-gray-200">
+      <div className="bg-white rounded-2xl w-full max-w-md mx-auto overflow-hidden flex flex-col max-h-[90vh]">
+        {/* Modal Header - Fixed */}
+        <div className="px-6 py-4 border-b border-gray-200 shrink-0">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-bold text-gray-900">Create Discount Code</h2>
@@ -167,175 +173,181 @@ export default function CreateDiscountModal({ isOpen, onClose }: CreateDiscountM
           </div>
         </div>
 
-        {/* Modal Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Discount Name */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              <div className="flex items-center gap-2">
-                <Tag size={16} />
-                Discount Name *
-              </div>
-            </label>
-            <input
-              type="text"
-              name="public_name"
-              value={formData.public_name}
-              onChange={handleChange}
-              placeholder="e.g., Flash Sale, Summer Discount, Black Friday"
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                errors.public_name ? 'border-red-300' : 'border-gray-300'
-              }`}
-            />
-            {errors.public_name && (
-              <p className="mt-1 text-sm text-red-600">{errors.public_name}</p>
-            )}
-          </div>
-
-          {/* Discount Type */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Discount Type *
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => setFormData(prev => ({ ...prev, discountType: 'percentage' }))}
-                className={`p-4 border rounded-lg flex flex-col items-center justify-center gap-2 transition-all ${
-                  formData.discountType === 'percentage'
-                    ? 'border-blue-500 bg-blue-50 text-blue-700 ring-2 ring-blue-100'
-                    : 'border-gray-300 hover:border-gray-400'
-                }`}
-              >
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Percent className="text-blue-600" size={20} />
-                </div>
-                <span className="font-medium">Percentage</span>
-              </button>
-              
-              <button
-                type="button"
-                onClick={() => setFormData(prev => ({ ...prev, discountType: 'fixed' }))}
-                className={`p-4 border rounded-lg flex flex-col items-center justify-center gap-2 transition-all ${
-                  formData.discountType === 'fixed'
-                    ? 'border-green-500 bg-green-50 text-green-700 ring-2 ring-green-100'
-                    : 'border-gray-300 hover:border-gray-400'
-                }`}
-              >
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <DollarSign className="text-green-600" size={20} />
-                </div>
-                <span className="font-medium">Fixed Amount</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Discount Value */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Discount Value *
-            </label>
-            <div className="relative">
-              {formData.discountType === 'percentage' ? (
-                <Percent className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-              ) : (
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">₦</span>
-              )}
-              <input
-                type="number"
-                name="discountValue"
-                value={formData.discountValue}
-                onChange={handleChange}
-                min="0"
-                max={formData.discountType === 'percentage' ? '100' : undefined}
-                step="0.01"
-                className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.discountValue ? 'border-red-300' : 'border-gray-300'
-                }`}
-                placeholder={formData.discountType === 'percentage' ? '0-100' : '0.00'}
-              />
-            </div>
-            {errors.discountValue && (
-              <p className="mt-1 text-sm text-red-600">{errors.discountValue}</p>
-            )}
-            <p className="mt-1 text-sm text-gray-500">
-              {formData.discountType === 'percentage' 
-                ? 'Enter percentage value (0-100%)'
-                : 'Enter fixed amount in Naira'}
-            </p>
-          </div>
-
-          {/* Discount Code */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-gray-700">
+        {/* Scrollable Content Area */}
+        <div className="flex-1 overflow-y-auto">
+          <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            {/* Discount Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 <div className="flex items-center gap-2">
-                  <Key size={16} />
-                  Discount Code *
+                  <Tag size={16} />
+                  Discount Name *
                 </div>
               </label>
-              <button
-                type="button"
-                onClick={generateRandomCode}
-                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-              >
-                Generate Random
-              </button>
-            </div>
-            <input
-              type="text"
-              name="discountCode"
-              value={formData.discountCode}
-              onChange={handleChange}
-              placeholder="e.g., FLASH50, SUMMER20"
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase ${
-                errors.discountCode ? 'border-red-300' : 'border-gray-300'
-              }`}
-              maxLength={10}
-            />
-            {errors.discountCode && (
-              <p className="mt-1 text-sm text-red-600">{errors.discountCode}</p>
-            )}
-            <div className="mt-2 flex items-center justify-between">
-              <p className="text-sm text-gray-500">
-                {formData.discountCode.length}/10 characters
-              </p>
-              <p className="text-sm text-gray-500">
-                Minimum 8 characters required
-              </p>
-            </div>
-          </div>
-
-          {/* Expiry Date */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              <div className="flex items-center gap-2">
-                <Calendar size={16} />
-                Expiry Date (Optional)
-              </div>
-            </label>
-            <div className="relative">
-              <DatePicker
-                selected={formData.expiresAt}
-                onChange={(date: any) => setFormData(prev => ({ ...prev, expiresAt: date || undefined }))}
-                minDate={new Date()}
-                dateFormat="MMMM d, yyyy"
-                placeholderText="Select expiry date"
+              <input
+                type="text"
+                name="public_name"
+                value={formData.public_name}
+                onChange={handleChange}
+                placeholder="e.g., Flash Sale, Summer Discount, Black Friday"
                 className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.expiresAt ? 'border-red-300' : 'border-gray-300'
+                  errors.public_name ? 'border-red-300' : 'border-gray-300'
                 }`}
               />
+              {errors.public_name && (
+                <p className="mt-1 text-sm text-red-600">{errors.public_name}</p>
+              )}
             </div>
-            {errors.expiresAt && (
-              <p className="mt-1 text-sm text-red-600">{errors.expiresAt}</p>
-            )}
-            <p className="mt-1 text-sm text-gray-500">
-              Leave empty for no expiry date
-            </p>
-          </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-3 pt-4">
+            {/* Discount Type */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Discount Type *
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, discountType: 'percentage' }))}
+                  className={`p-4 border rounded-lg flex flex-col items-center justify-center gap-2 transition-all ${
+                    formData.discountType === 'percentage'
+                      ? 'border-blue-500 bg-blue-50 text-blue-700 ring-2 ring-blue-100'
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                >
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <Percent className="text-blue-600" size={20} />
+                  </div>
+                  <span className="font-medium">Percentage</span>
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, discountType: 'fixed' }))}
+                  className={`p-4 border rounded-lg flex flex-col items-center justify-center gap-2 transition-all ${
+                    formData.discountType === 'fixed'
+                      ? 'border-green-500 bg-green-50 text-green-700 ring-2 ring-green-100'
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                >
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <DollarSign className="text-green-600" size={20} />
+                  </div>
+                  <span className="font-medium">Fixed Amount</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Discount Value */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Discount Value *
+              </label>
+              <div className="relative">
+                {formData.discountType === 'percentage' ? (
+                  <Percent className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                ) : (
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">₦</span>
+                )}
+                <input
+                  type="number"
+                  name="discountValue"
+                  value={formData.discountValue}
+                  onChange={handleChange}
+                  min="0"
+                  max={formData.discountType === 'percentage' ? '100' : undefined}
+                  step="0.01"
+                  className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    errors.discountValue ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  placeholder={formData.discountType === 'percentage' ? '0-100' : '0.00'}
+                />
+              </div>
+              {errors.discountValue && (
+                <p className="mt-1 text-sm text-red-600">{errors.discountValue}</p>
+              )}
+              <p className="mt-1 text-sm text-gray-500">
+                {formData.discountType === 'percentage' 
+                  ? 'Enter percentage value (0-100%)'
+                  : 'Enter fixed amount in Naira'}
+              </p>
+            </div>
+
+            {/* Discount Code */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  <div className="flex items-center gap-2">
+                    <Key size={16} />
+                    Discount Code *
+                  </div>
+                </label>
+                <button
+                  type="button"
+                  onClick={generateRandomCode}
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Generate Random
+                </button>
+              </div>
+              <input
+                type="text"
+                name="discountCode"
+                value={formData.discountCode}
+                onChange={handleChange}
+                placeholder="e.g., FLASH50, SUMMER20"
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase ${
+                  errors.discountCode ? 'border-red-300' : 'border-gray-300'
+                }`}
+                maxLength={10}
+              />
+              {errors.discountCode && (
+                <p className="mt-1 text-sm text-red-600">{errors.discountCode}</p>
+              )}
+              <div className="mt-2 flex items-center justify-between">
+                <p className="text-sm text-gray-500">
+                  {formData.discountCode.length}/10 characters
+                </p>
+                <p className="text-sm text-gray-500">
+                  Minimum 8 characters required
+                </p>
+              </div>
+            </div>
+
+            {/* Expiry Date */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <div className="flex items-center gap-2">
+                  <Calendar size={16} />
+                  Expiry Date (Optional)
+                </div>
+              </label>
+              <div className="relative">
+                <DatePicker
+                  selected={formData.expiresAt}
+                  onChange={(date: any) => setFormData(prev => ({ ...prev, expiresAt: date || undefined }))}
+                  minDate={new Date()}
+                  dateFormat="MMMM d, yyyy"
+                  placeholderText="Select expiry date"
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    errors.expiresAt ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                />
+              </div>
+              {errors.expiresAt && (
+                <p className="mt-1 text-sm text-red-600">{errors.expiresAt}</p>
+              )}
+              <p className="mt-1 text-sm text-gray-500">
+                Leave empty for no expiry date
+              </p>
+            </div>
+
+            {/* Action Buttons - This will be after the scrollable content */}
+          </form>
+        </div>
+
+        {/* Fixed Footer with Action Buttons */}
+        <div className="px-6 py-4 border-t border-gray-200 shrink-0">
+          <div className="flex gap-3">
             <button
               type="button"
               onClick={onClose}
@@ -345,6 +357,7 @@ export default function CreateDiscountModal({ isOpen, onClose }: CreateDiscountM
             </button>
             <button
               type="submit"
+              onClick={handleSubmit}
               disabled={createMutation.isPending}
               className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
             >
@@ -358,7 +371,7 @@ export default function CreateDiscountModal({ isOpen, onClose }: CreateDiscountM
               )}
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

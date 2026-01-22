@@ -61,6 +61,7 @@ export default function DiscountCodesPage() {
       const response = await axios.get(
         `${API_BASE_URL}/product/api/get-discount-code`,
         {
+            withCredentials: true,
           headers: { Authorization: `Bearer ${token}` }
         }
       );
