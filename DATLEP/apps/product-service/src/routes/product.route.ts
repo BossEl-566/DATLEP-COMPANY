@@ -1,5 +1,5 @@
 import express from "express";
-import { createDiscountCodes, createProduct, deleteDiscountCode, getCategory, getDiscountCodes } from "../controllers/product.controller";
+import { createDiscountCodes, createProduct, deleteDiscountCode, getCategory, getDiscountCodes, getShopProducts } from "../controllers/product.controller";
 import isSellerAuthenticated from "../../../../packages/middleware/isSellerAuthenticated";
 
 
@@ -11,6 +11,7 @@ router.post("/create-discount-code", isSellerAuthenticated, createDiscountCodes)
 router.get("/get-discount-code", isSellerAuthenticated, getDiscountCodes);
 router.delete("/delete-discount-code/:id", isSellerAuthenticated, deleteDiscountCode);
 router.post("/create-product", isSellerAuthenticated, createProduct);
+router.get("/get-shop-product", isSellerAuthenticated, getShopProducts);  
 
 
 export default router;

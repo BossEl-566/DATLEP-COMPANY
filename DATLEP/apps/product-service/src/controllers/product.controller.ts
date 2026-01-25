@@ -3,7 +3,7 @@ import { Request, Response, NextFunction } from "express";
 import { SellerRequest } from '../types/express';
 import { createImage } from "../services/image.service";
 import { Types } from 'mongoose';
-import { type } from "os";
+
 
 
 // get all categories
@@ -248,5 +248,14 @@ if (gallery && gallery.length > 1) {
     next(error);
   }
 };
+
+export const getShopProducts = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const products = await Product.find({ shopId: req.user?.shop, status: 'active', isDeleted: false });
+    res.status(200).json(products);
+  } catch (error) {
+    next(error);
+  }
+}
 
 
