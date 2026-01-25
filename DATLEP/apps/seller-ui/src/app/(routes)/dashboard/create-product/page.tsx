@@ -10,7 +10,11 @@ import SelectColors from '../../../../shared/components/product/SelectColors';
 import DetailedDescription from '../../../../shared/components/product/DetailedDescription';
 import SelectSizes from '../../../../shared/components/product/SelectSizes';
 import CustomSpecifications from '../../../../shared/components/product/CustomSpecifications';
+import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 import { createProduct } from '../../../actions/product.actions';
+
+
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:5000';
 
@@ -92,6 +96,7 @@ interface DiscountCode {
 }
 
 export default function CreateProductPage() {
+  const router = useRouter();
   const [categories, setCategories] = useState<string[]>([]);
   const [subCategories, setSubCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -255,8 +260,8 @@ export default function CreateProductPage() {
   const mutation = useMutation({
     mutationFn: createProduct,
     onSuccess: () => {
-      alert('Product created successfully!');
-      // Reset form or redirect
+      toast.success('Product created successfully!');
+      router.push('/dashboard/products');
     },
     onError: (error) => {
       alert(`Error creating product: ${error.message}`);
