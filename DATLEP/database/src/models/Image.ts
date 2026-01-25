@@ -5,7 +5,6 @@ const ImageSchema = new Schema(
     fileId: {
       type: String,
       required: true,
-      unique: true 
     },
     url: {
       type: String,

@@ -127,7 +127,7 @@ export const createProduct = async (
     const shopId = req.user?.shop;
 
     if (!sellerId || !shopId) {
-      res.status(401).json({ message: 'Unauthorized seller' });
+     res.status(401).json({ message: 'Unauthorized seller' });
     }
 
     const {
@@ -173,34 +173,40 @@ export const createProduct = async (
 
     const exists = await Product.findOne({ slug });
     if (exists) {
-      res.status(400).json({ message: 'Product already exists' });
+    res.status(400).json({ message: 'Product already exists' });
     }
 
     const sellerObjectId = new Types.ObjectId(String(sellerId));
     const shopObjectId = new Types.ObjectId(String(shopId));
 
-    console.log('shopObjectId:', shopObjectId);
-    console.log('sellerObjectId:', sellerObjectId);
-
+    // 1️⃣ Create main image
     const newImage = await createImage(
-  { url: image.url, fileId: image.fileId },
-  sellerObjectId,
-  { shopId: shopObjectId }
-);
-
-const galleryImages = await Promise.all(
-  (gallery || []).map(async (img: any) => {
-    const imgDoc = await createImage(
-      { url: img.url, fileId: img.fileId },
+      { url: image.url, fileId: image.fileId },
       sellerObjectId,
-      { productId: product._id, shopId: shopObjectId }
+      { shopId: shopObjectId }
     );
-    return imgDoc._id;
-  })
-);
 
+    // 2️⃣ Create gallery images ONLY if more than 1 and not duplicate of main image
+    let galleryImages: Types.ObjectId[] = [];
+if (gallery && gallery.length > 1) {
+  galleryImages = await Promise.all(
+    (gallery as { url: string; fileId: string }[])
+      .filter((img) => img.url !== image.url) // skip main image if same
+      .map(async (img) => {
+        const imgDoc = await createImage(
+          { url: img.url, fileId: img.fileId },
+          sellerObjectId,
+          { shopId: shopObjectId }
+        );
+        return imgDoc._id;
+      })
+  );
+}
 
-    // 1️⃣ Create product WITHOUT images
+    console.log('newImage:', newImage);
+    console.log('galleryImages:', galleryImages);
+
+    // 3️⃣ Create product with main image and gallery images
     const product = await Product.create({
       title,
       slug,
@@ -236,10 +242,11 @@ const galleryImages = await Promise.all(
       favoritesCount: 0,
       orderCount: 0
     });
-    await product.save();
 
     res.status(201).json(product);
   } catch (error) {
     next(error);
   }
 };
+
+
