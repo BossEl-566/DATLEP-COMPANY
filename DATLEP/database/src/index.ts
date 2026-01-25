@@ -8,4 +8,5 @@ export * from "./models/ShopReview";
 export * from "./models/BespokeCreator";
 export * from "./models/SiteConfig";
 export * from "./models/Discount";
+export * from "./models/Product";
 

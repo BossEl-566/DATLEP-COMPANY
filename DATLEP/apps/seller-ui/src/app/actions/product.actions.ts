@@ -1,23 +1,26 @@
-'use server';
-
+'use client';
 import axios from 'axios';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:5000';
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:5000';
 
 export async function createProduct(formData: any) {
   try {
     const response = await axios.post(
-      `${API_BASE_URL}/product/api/create`,
+      `${API_BASE_URL}/product/api/create-product`,
       formData,
       {
+        withCredentials: true, // 🔥 THIS IS THE FIX
         headers: {
           'Content-Type': 'application/json',
         },
       }
     );
-    
+
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || 'Failed to create product');
+    throw new Error(
+      error.response?.data?.message || 'Failed to create product'
+    );
   }
 }

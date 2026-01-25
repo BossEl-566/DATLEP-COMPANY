@@ -10,5 +10,6 @@ export interface SellerRequest extends Request {
     _id: string;
     role: 'seller';
     isSeller: boolean;
+    shop: Schema.Types.ObjectId | string;
   };
 }

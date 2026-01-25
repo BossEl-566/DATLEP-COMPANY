@@ -1,6 +1,9 @@
-import { Discount, SiteConfigModel } from "@datlep/database";
+import { Discount, Image, Product, SiteConfigModel } from "@datlep/database";
 import { Request, Response, NextFunction } from "express";
 import { SellerRequest } from '../types/express';
+import { createImage } from "../services/image.service";
+import { Types } from 'mongoose';
+import { type } from "os";
 
 
 // get all categories
@@ -114,3 +117,129 @@ export const deleteDiscountCode = async (
   }
 };
 
+export const createProduct = async (
+  req: SellerRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const sellerId = req.user?._id;
+    const shopId = req.user?.shop;
+
+    if (!sellerId || !shopId) {
+      res.status(401).json({ message: 'Unauthorized seller' });
+    }
+
+    const {
+      title,
+      slug,
+      category,
+      subcategory,
+      shortDescription,
+      detailedDescription,
+      image,
+      gallery,
+      tags,
+      brand,
+      colors,
+      sizes,
+      regularPrice,
+      salePrice,
+      stock,
+      warranty,
+      customSpecification,
+      customProperties,
+      cashOnDelivery,
+      discountCodes,
+      sku,
+      barcode,
+      weight,
+      dimensions,
+      shipping,
+      seo
+    } = req.body;
+
+    if (
+      !title ||
+      !slug ||
+      !category ||
+      !shortDescription ||
+      !detailedDescription ||
+      !image ||
+      regularPrice == null
+    ) {
+      res.status(400).json({ message: 'Missing required fields' });
+    }
+
+    const exists = await Product.findOne({ slug });
+    if (exists) {
+      res.status(400).json({ message: 'Product already exists' });
+    }
+
+    const sellerObjectId = new Types.ObjectId(String(sellerId));
+    const shopObjectId = new Types.ObjectId(String(shopId));
+
+    console.log('shopObjectId:', shopObjectId);
+    console.log('sellerObjectId:', sellerObjectId);
+
+    const newImage = await createImage(
+  { url: image.url, fileId: image.fileId },
+  sellerObjectId,
+  { shopId: shopObjectId }
+);
+
+const galleryImages = await Promise.all(
+  (gallery || []).map(async (img: any) => {
+    const imgDoc = await createImage(
+      { url: img.url, fileId: img.fileId },
+      sellerObjectId,
+      { productId: product._id, shopId: shopObjectId }
+    );
+    return imgDoc._id;
+  })
+);
+
+
+    // 1️⃣ Create product WITHOUT images
+    const product = await Product.create({
+      title,
+      slug,
+      category,
+      subcategory,
+      shortDescription,
+      detailedDescription,
+      image: newImage._id,
+      gallery: galleryImages,
+      tags,
+      brand,
+      colors,
+      sizes,
+      regularPrice,
+      salePrice,
+      stock,
+      warranty,
+      customSpecification,
+      customProperties,
+      cashOnDelivery,
+      discountCodes,
+      sku,
+      barcode,
+      weight,
+      dimensions,
+      shipping,
+      seo,
+      sellerId: sellerObjectId,
+      shopId: shopObjectId,
+      status: 'active',
+      isDeleted: false,
+      views: 0,
+      favoritesCount: 0,
+      orderCount: 0
+    });
+    await product.save();
+
+    res.status(201).json(product);
+  } catch (error) {
+    next(error);
+  }
+};
