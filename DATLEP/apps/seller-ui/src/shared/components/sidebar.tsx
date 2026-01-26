@@ -95,10 +95,10 @@ function SidebarWrapper() {
             href: '/dashboard/create-product'
         },
         {
-            id: 'products',
+            id: 'all-product',
             title: 'All Products',
             icon: <List className="w-5 h-5" />,
-            href: '/dashboard/products'
+            href: '/dashboard/all-product'
         },
         {
             id: 'inventory',

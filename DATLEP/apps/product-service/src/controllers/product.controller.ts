@@ -1,4 +1,4 @@
-import { Discount, Image, Product, SiteConfigModel } from "@datlep/database";
+import { Discount, Image, Product, Seller, SiteConfigModel } from "@datlep/database";
 import { Request, Response, NextFunction } from "express";
 import { SellerRequest } from '../types/express';
 import { createImage } from "../services/image.service";
@@ -258,4 +258,87 @@ export const getShopProducts = async (req: Request, res: Response, next: NextFun
   }
 }
 
+// delete product
+export const deleteProduct = async (
+  req: SellerRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const sellerId = req.user?._id;
 
+    if (!sellerId) {
+      res.status(401).json({ message: 'Unauthorized seller' });
+    }
+
+    const product = await Product.findById(id);
+    if (!product) {
+      res.status(404).json({ message: 'Product not found' });
+    }
+
+    if (String(product?.sellerId ) !== String(sellerId)) {
+      res.status(403).json({ message: 'You are not allowed to delete this product' });
+    }
+
+    // Soft delete: mark inactive & schedule deletion after 24 hours
+    await Product.updateOne(
+      { _id: id },
+      {
+        status: 'inactive',
+        isDeleted: true,
+        deletedAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+      }
+    );
+
+    res.status(200).json({
+      message: 'Product marked for deletion and will be removed after 24 hours'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// restore product
+export const restoreProduct = async (
+  req: SellerRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const sellerId = req.user?._id;
+
+    if (!sellerId) {
+      res.status(401).json({ message: 'Unauthorized seller' });
+    }
+
+    const product = await Product.findById(id);
+    if (!product) {
+      res.status(404).json({ message: 'Product not found' });
+    }
+
+    if (String(product?.sellerId ) !== String(sellerId)) {
+      res.status(403).json({ message: 'You are not allowed to restore this product' });
+    }
+    //restore product
+    await Product.updateOne(
+      { _id: id },
+      {
+        status: 'active',
+        isDeleted: false,
+        deletedAt: null
+      }
+    );
+
+    res.status(200).json({
+      message: 'Product restored successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+  }
+    
+
+
+ 
