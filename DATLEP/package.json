@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "npx nx run-many --target=serve --all",
     "user-ui": "npx nx run-many --target=dev --projects=user-ui",
-    "seller-ui": "npx nx run-many --target=dev --projects=seller-ui"
+    "seller-ui": "npx nx run-many --target=dev --projects=seller-ui",
+    "bespoke-ui": "npx nx run-many --target=dev --projects=bespoke-ui"
   },
   "private": true,
   "dependencies": {
