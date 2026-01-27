@@ -38,7 +38,7 @@ const ShippingOptions: React.FC<ShippingOptionsProps> = ({ options, onChange }) 
         <button
           type="button"
           onClick={addOption}
-          className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+          className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
           <Plus className="h-4 w-4 mr-2" />
           Add Shipping Option
@@ -62,7 +62,7 @@ const ShippingOptions: React.FC<ShippingOptionsProps> = ({ options, onChange }) 
                       type="text"
                       value={option.destination}
                       onChange={(e) => updateOption(index, { destination: e.target.value })}
-                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       placeholder="e.g., Lagos, Nigeria"
                       required
                     />
@@ -78,7 +78,7 @@ const ShippingOptions: React.FC<ShippingOptionsProps> = ({ options, onChange }) 
                     step="0.01"
                     value={option.cost}
                     onChange={(e) => updateOption(index, { cost: parseFloat(e.target.value) || 0 })}
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     placeholder="0.00"
                     required
                   />
@@ -95,7 +95,7 @@ const ShippingOptions: React.FC<ShippingOptionsProps> = ({ options, onChange }) 
                       type="text"
                       value={option.estimatedTime}
                       onChange={(e) => updateOption(index, { estimatedTime: e.target.value })}
-                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       placeholder="e.g., 3-5 business days"
                       required
                     />

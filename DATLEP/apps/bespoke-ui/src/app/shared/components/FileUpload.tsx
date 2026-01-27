@@ -100,7 +100,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
       <div
         className={`relative border-2 border-dashed rounded-lg p-6 transition-colors ${
           dragActive
-            ? 'border-purple-500 bg-purple-50'
+            ? 'border-blue-500 bg-blue-50'
             : 'border-gray-300 hover:border-gray-400'
         }`}
         onDragEnter={handleDrag}
@@ -121,7 +121,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
         <div className="text-center">
           <Upload className="h-12 w-12 text-gray-400 mx-auto mb-2" />
           <p className="text-sm text-gray-600">
-            <span className="text-purple-600 font-medium">Click to upload</span> or drag and drop
+            <span className="text-blue-600 font-medium">Click to upload</span> or drag and drop
           </p>
           <p className="text-xs text-gray-500 mt-1">
             {accept.includes('image') ? 'Images' : 'Files'} up to {maxSizeMB}MB

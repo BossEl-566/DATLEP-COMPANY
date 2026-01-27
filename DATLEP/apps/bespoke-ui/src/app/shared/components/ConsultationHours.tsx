@@ -38,7 +38,7 @@ const ConsultationHours: React.FC<ConsultationHoursProps> = ({
                 type="checkbox"
                 checked={dayHours.isAvailable}
                 onChange={(e) => updateHours(day.id, { isAvailable: e.target.checked })}
-                className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
               <span className="text-sm font-medium text-gray-900">{day.label}</span>
             </div>
@@ -50,7 +50,7 @@ const ConsultationHours: React.FC<ConsultationHoursProps> = ({
                     type="time"
                     value={dayHours.startTime}
                     onChange={(e) => updateHours(day.id, { startTime: e.target.value })}
-                    className="text-sm border border-gray-300 rounded px-2 py-1 focus:ring-purple-500 focus:border-purple-500"
+                    className="text-sm border border-gray-300 rounded px-2 py-1 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
                 <span className="text-gray-500">to</span>
@@ -60,7 +60,7 @@ const ConsultationHours: React.FC<ConsultationHoursProps> = ({
                     type="time"
                     value={dayHours.endTime}
                     onChange={(e) => updateHours(day.id, { endTime: e.target.value })}
-                    className="text-sm border border-gray-300 rounded px-2 py-1 focus:ring-purple-500 focus:border-purple-500"
+                    className="text-sm border border-gray-300 rounded px-2 py-1 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
               </div>

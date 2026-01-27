@@ -34,7 +34,7 @@ const FormCheckbox = <T extends FieldValues>({
           {...register(name, {
             required: required ? 'This field is required' : false,
           })}
-          className="h-4 w-4 mt-1 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+          className="h-4 w-4 mt-1 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
         />
         <label htmlFor={name} className="ml-2 block text-sm text-gray-700">
           {label}

@@ -45,7 +45,7 @@ const ServicesManager: React.FC<ServicesManagerProps> = ({
         <button
           type="button"
           onClick={addService}
-          className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+          className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
           <Plus className="h-4 w-4 mr-2" />
           Add Service
@@ -66,7 +66,7 @@ const ServicesManager: React.FC<ServicesManagerProps> = ({
                       type="text"
                       value={service.name}
                       onChange={(e) => updateService(index, { name: e.target.value })}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       placeholder="e.g., Custom Suit Tailoring"
                       required
                     />
@@ -85,7 +85,7 @@ const ServicesManager: React.FC<ServicesManagerProps> = ({
                         step="0.01"
                         value={service.basePrice}
                         onChange={(e) => updateService(index, { basePrice: parseFloat(e.target.value) || 0 })}
-                        className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                        className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                         placeholder="0.00"
                         required
                       />
@@ -100,7 +100,7 @@ const ServicesManager: React.FC<ServicesManagerProps> = ({
                   <textarea
                     value={service.description}
                     onChange={(e) => updateService(index, { description: e.target.value })}
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     placeholder="Describe the service in detail..."
                     rows={2}
                     required
@@ -120,7 +120,7 @@ const ServicesManager: React.FC<ServicesManagerProps> = ({
                         type="text"
                         value={service.timeRequired}
                         onChange={(e) => updateService(index, { timeRequired: e.target.value })}
-                        className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                        className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                         placeholder="e.g., 2-3 weeks, 5 business days"
                         required
                       />
@@ -132,7 +132,7 @@ const ServicesManager: React.FC<ServicesManagerProps> = ({
                         type="checkbox"
                         checked={service.isAvailable}
                         onChange={(e) => updateService(index, { isAvailable: e.target.checked })}
-                        className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                       />
                       <span className="ml-2 text-sm text-gray-700">Available</span>
                     </label>

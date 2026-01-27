@@ -62,12 +62,12 @@ const SkillInput: React.FC<SkillInputProps> = ({
             value={newSkill}
             onChange={(e) => setNewSkill(e.target.value)}
             placeholder="e.g., Pattern Making, Hand Stitching"
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
           />
           <select
             value={selectedProficiency}
             onChange={(e) => setSelectedProficiency(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+            className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
           >
             {proficiencyLevels.map((level) => (
               <option key={level.id} value={level.id}>
@@ -82,12 +82,12 @@ const SkillInput: React.FC<SkillInputProps> = ({
             placeholder="Years"
             min="0"
             max="50"
-            className="w-24 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+            className="w-24 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
           />
           <button
             type="button"
             onClick={addSkill}
-            className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+            className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             <Plus className="h-4 w-4 mr-2" />
             Add
@@ -108,7 +108,7 @@ const SkillInput: React.FC<SkillInputProps> = ({
                 skill.proficiency === 'basic' ? 'bg-blue-100 text-blue-800' :
                 skill.proficiency === 'intermediate' ? 'bg-green-100 text-green-800' :
                 skill.proficiency === 'advanced' ? 'bg-yellow-100 text-yellow-800' :
-                'bg-purple-100 text-purple-800'
+                'bg-blue-100 text-blue-800'
               }`}>
                 {skill.proficiency}
               </span>

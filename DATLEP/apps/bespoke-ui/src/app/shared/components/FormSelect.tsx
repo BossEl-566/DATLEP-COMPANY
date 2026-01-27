@@ -56,7 +56,7 @@ const FormSelect = <T extends FieldValues>({
           })}
           className={`block w-full ${
             Icon ? 'pl-10' : 'pl-3'
-          } pr-10 py-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 sm:text-sm ${
+          } pr-10 py-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
             error ? 'border-red-300' : 'border-gray-300'
           }`}
         >

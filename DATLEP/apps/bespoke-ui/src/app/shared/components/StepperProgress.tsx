@@ -26,7 +26,7 @@ const StepperProgress: React.FC<StepperProgressProps> = ({
               <div
                 className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
                   currentStep === stepNumber
-                    ? 'border-purple-600 bg-purple-600 text-white'
+                    ? 'border-blue-600 bg-blue-600 text-white'
                     : currentStep > stepNumber
                     ? 'border-green-600 bg-green-600 text-white'
                     : 'border-gray-300 text-gray-500'
@@ -58,7 +58,7 @@ const StepperProgress: React.FC<StepperProgressProps> = ({
               key={step}
               className={
                 currentStep === stepNumber
-                  ? 'text-purple-700'
+                  ? 'text-blue-700'
                   : currentStep > stepNumber
                   ? 'text-green-600'
                   : 'text-gray-500'

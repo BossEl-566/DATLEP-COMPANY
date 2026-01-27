@@ -71,9 +71,9 @@ const PortfolioUpload: React.FC<PortfolioUploadProps> = ({ portfolio, onChange }
             className="hidden"
             disabled={uploading}
           />
-          <div className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-purple-400 hover:bg-purple-50 transition-colors">
+          <div className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors">
             {uploading ? (
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             ) : (
               <>
                 <Upload className="h-8 w-8 text-gray-400 mb-2" />

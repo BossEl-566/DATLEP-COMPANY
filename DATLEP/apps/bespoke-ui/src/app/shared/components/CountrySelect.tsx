@@ -42,7 +42,7 @@ const CountrySelect: React.FC<CountrySelectProps> = ({
           id={name}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className={`block w-full ${Icon ? 'pl-10' : 'pl-3'} pr-10 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 sm:text-sm appearance-none`}
+          className={`block w-full ${Icon ? 'pl-10' : 'pl-3'} pr-10 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none`}
           required={required}
         >
           {countries.map((country) => (

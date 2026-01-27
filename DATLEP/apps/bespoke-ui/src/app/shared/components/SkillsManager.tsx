@@ -43,7 +43,7 @@ const SkillsManager: React.FC<SkillsManagerProps> = ({
         <button
           type="button"
           onClick={addSkill}
-          className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+          className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
           <Plus className="h-4 w-4 mr-2" />
           Add Skill
@@ -63,7 +63,7 @@ const SkillsManager: React.FC<SkillsManagerProps> = ({
                     type="text"
                     value={skill.name}
                     onChange={(e) => updateSkill(index, { name: e.target.value })}
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     placeholder="e.g., Pattern Making, Hand Stitching"
                     required
                   />
@@ -77,7 +77,7 @@ const SkillsManager: React.FC<SkillsManagerProps> = ({
                     onChange={(e) => updateSkill(index, { 
                       proficiency: e.target.value as ProficiencyLevel 
                     })}
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   >
                     {proficiencyLevels.map((level) => (
                       <option key={level.id} value={level.id}>
@@ -98,7 +98,7 @@ const SkillsManager: React.FC<SkillsManagerProps> = ({
                     onChange={(e) => updateSkill(index, { 
                       yearsOfExperience: e.target.value ? parseInt(e.target.value) : undefined 
                     })}
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     placeholder="Optional"
                   />
                 </div>

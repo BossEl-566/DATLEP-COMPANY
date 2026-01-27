@@ -488,12 +488,12 @@ const BespokeSignup = () => {
   const renderStep1 = () => (
     <form onSubmit={handleSubmit(onAccountSubmit)} className="space-y-6">
       <div className="space-y-4">
-        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
           <div className="flex items-start">
-            <Sparkles className="h-5 w-5 text-purple-600 mt-0.5 mr-2" />
+            <Sparkles className="h-5 w-5 text-blue-600 mt-0.5 mr-2" />
             <div>
-              <h4 className="text-sm font-medium text-purple-800">Step 1: Create Your Creator Account</h4>
-              <p className="text-sm text-purple-700 mt-1">
+              <h4 className="text-sm font-medium text-blue-800">Step 1: Create Your Creator Account</h4>
+              <p className="text-sm text-blue-700 mt-1">
                 Set up your basic account information. You'll verify your email before building your creator profile.
               </p>
             </div>
@@ -618,11 +618,11 @@ const BespokeSignup = () => {
           label={
             <>
               I agree to DATLEP's{' '}
-              <Link href="/bespoke/terms" className="text-purple-700 hover:text-purple-800">
+              <Link href="/bespoke/terms" className="text-blue-700 hover:text-blue-800">
                 Creator Terms
               </Link>{' '}
               and{' '}
-              <Link href="/privacy" className="text-purple-700 hover:text-purple-800">
+              <Link href="/privacy" className="text-blue-700 hover:text-blue-800">
                 Privacy Policy
               </Link>
             </>
@@ -645,10 +645,10 @@ const BespokeSignup = () => {
       <button
         type="submit"
         disabled={!isValid}
-        className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors ${
+        className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors ${
           !isValid
             ? 'bg-gray-400 cursor-not-allowed'
-            : 'bg-purple-700 hover:bg-purple-800'
+            : 'bg-blue-700 hover:bg-blue-800'
         }`}
       >
         Continue to Email Verification
@@ -660,12 +660,12 @@ const BespokeSignup = () => {
   const renderStep2 = () => (
     <form onSubmit={handleSubmit(onProfileSubmit)} className="space-y-6">
       <div className="space-y-4">
-        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
           <div className="flex items-start">
-            <Briefcase className="h-5 w-5 text-purple-600 mt-0.5 mr-2" />
+            <Briefcase className="h-5 w-5 text-blue-600 mt-0.5 mr-2" />
             <div>
-              <h4 className="text-sm font-medium text-purple-800">Step 2: Build Your Creator Profile</h4>
-              <p className="text-sm text-purple-700 mt-1">
+              <h4 className="text-sm font-medium text-blue-800">Step 2: Build Your Creator Profile</h4>
+              <p className="text-sm text-blue-700 mt-1">
                 Showcase your expertise, skills, and what makes you unique as a creator.
               </p>
             </div>
@@ -684,7 +684,7 @@ const BespokeSignup = () => {
                   key={spec.id}
                   className={`relative flex items-start p-4 border rounded-lg cursor-pointer transition-all ${
                     watch('specialization') === spec.id
-                      ? 'border-purple-500 bg-purple-50 ring-2 ring-purple-200'
+                      ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
@@ -695,8 +695,8 @@ const BespokeSignup = () => {
                     className="sr-only"
                   />
                   <div className="flex items-start space-x-3">
-                    <div className="p-2 bg-purple-100 rounded-lg">
-                      <Icon className="h-5 w-5 text-purple-600" />
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <Icon className="h-5 w-5 text-blue-600" />
                     </div>
                     <div className="flex-1">
                       <p className="font-medium text-gray-900">{spec.label}</p>
@@ -704,7 +704,7 @@ const BespokeSignup = () => {
                     </div>
                   </div>
                   {watch('specialization') === spec.id && (
-                    <CheckCircle className="absolute top-2 right-2 h-5 w-5 text-purple-600" />
+                    <CheckCircle className="absolute top-2 right-2 h-5 w-5 text-blue-600" />
                   )}
                 </label>
               );
@@ -806,14 +806,14 @@ const BespokeSignup = () => {
                       newTechniques[index] = e.target.value;
                       field.onChange(newTechniques);
                     }}
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     placeholder="e.g., Hand-stitching, Laser cutting"
                   />
                 ))}
                 <button
                   type="button"
                   onClick={() => field.onChange([...field.value, ''])}
-                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Add Technique
@@ -842,7 +842,7 @@ const BespokeSignup = () => {
                 }}
                 className={`inline-flex items-center px-3 py-2 rounded-full text-sm font-medium ${
                   watch('languages').includes(language.code)
-                    ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                    ? 'bg-blue-100 text-blue-800 border border-blue-200'
                     : 'bg-gray-100 text-gray-800 border border-gray-200 hover:bg-gray-200'
                 }`}
               >
@@ -856,7 +856,7 @@ const BespokeSignup = () => {
 
       <button
         type="submit"
-        className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-purple-700 hover:bg-purple-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors"
+        className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-700 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
       >
         Continue to Services & Pricing
       </button>
@@ -867,12 +867,12 @@ const BespokeSignup = () => {
   const renderStep3 = () => (
     <form onSubmit={handleSubmit(onServicesSubmit)} className="space-y-6">
       <div className="space-y-4">
-        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
           <div className="flex items-start">
-            <DollarSign className="h-5 w-5 text-purple-600 mt-0.5 mr-2" />
+            <DollarSign className="h-5 w-5 text-blue-600 mt-0.5 mr-2" />
             <div>
-              <h4 className="text-sm font-medium text-purple-800">Step 3: Define Your Services & Pricing</h4>
-              <p className="text-sm text-purple-700 mt-1">
+              <h4 className="text-sm font-medium text-blue-800">Step 3: Define Your Services & Pricing</h4>
+              <p className="text-sm text-blue-700 mt-1">
                 Set up the services you offer and your pricing structure.
               </p>
             </div>
@@ -942,7 +942,7 @@ const BespokeSignup = () => {
                     key={model.id}
                     className={`flex items-center p-3 border rounded-lg cursor-pointer ${
                       watch('pricingModel') === model.id
-                        ? 'border-purple-500 bg-purple-50'
+                        ? 'border-blue-500 bg-blue-50'
                         : 'border-gray-200'
                     }`}
                   >
@@ -994,7 +994,7 @@ const BespokeSignup = () => {
                   })}
                   className="flex-1"
                 />
-                <span className="ml-4 text-lg font-semibold text-purple-600">
+                <span className="ml-4 text-lg font-semibold text-blue-600">
                   {watch('depositPercentage')}%
                 </span>
               </div>
@@ -1008,7 +1008,7 @@ const BespokeSignup = () => {
 
       <button
         type="submit"
-        className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-purple-700 hover:bg-purple-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors"
+        className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-700 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
       >
         Continue to Business Setup
       </button>
@@ -1019,12 +1019,12 @@ const BespokeSignup = () => {
   const renderStep4 = () => (
     <form onSubmit={handleSubmit(onBusinessSubmit)} className="space-y-6">
       <div className="space-y-4">
-        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
           <div className="flex items-start">
-            <Building className="h-5 w-5 text-purple-600 mt-0.5 mr-2" />
+            <Building className="h-5 w-5 text-blue-600 mt-0.5 mr-2" />
             <div>
-              <h4 className="text-sm font-medium text-purple-800">Step 4: Setup Your Business Operations</h4>
-              <p className="text-sm text-purple-700 mt-1">
+              <h4 className="text-sm font-medium text-blue-800">Step 4: Setup Your Business Operations</h4>
+              <p className="text-sm text-blue-700 mt-1">
                 Configure how you work with clients and handle business operations.
               </p>
             </div>
@@ -1115,7 +1115,7 @@ const BespokeSignup = () => {
                   key={option.id}
                   className={`flex flex-col items-center p-4 border rounded-lg cursor-pointer ${
                     watch('fittingOptions').includes(option?.id)
-                      ? 'border-purple-500 bg-purple-50'
+                      ? 'border-blue-500 bg-blue-50'
                       : 'border-gray-200'
                   }`}
                 >
@@ -1167,7 +1167,7 @@ const BespokeSignup = () => {
                   key={method.id}
                   className={`flex items-center p-3 border rounded-lg cursor-pointer ${
                     watch('paymentMethods').includes(method.id)
-                      ? 'border-purple-500 bg-purple-50'
+                      ? 'border-blue-500 bg-blue-50'
                       : 'border-gray-200'
                   }`}
                 >
@@ -1197,7 +1197,7 @@ const BespokeSignup = () => {
 
       <button
         type="submit"
-        className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-purple-700 hover:bg-purple-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors"
+        className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-700 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
       >
         Continue to Portfolio
       </button>
@@ -1208,12 +1208,12 @@ const BespokeSignup = () => {
   const renderStep5 = () => (
     <form onSubmit={handleSubmit(onPortfolioSubmit)} className="space-y-6">
       <div className="space-y-4">
-        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
           <div className="flex items-start">
-            <Camera className="h-5 w-5 text-purple-600 mt-0.5 mr-2" />
+            <Camera className="h-5 w-5 text-blue-600 mt-0.5 mr-2" />
             <div>
-              <h4 className="text-sm font-medium text-purple-800">Step 5: Showcase Your Work</h4>
-              <p className="text-sm text-purple-700 mt-1">
+              <h4 className="text-sm font-medium text-blue-800">Step 5: Showcase Your Work</h4>
+              <p className="text-sm text-blue-700 mt-1">
                 Upload your best work to showcase your skills and attract clients.
               </p>
             </div>
@@ -1250,7 +1250,7 @@ const BespokeSignup = () => {
                           newAwards[index] = { ...award, name: e.target.value };
                           field.onChange(newAwards);
                         }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                         placeholder="Award name"
                       />
                     </div>
@@ -1266,7 +1266,7 @@ const BespokeSignup = () => {
                 <button
                   type="button"
                   onClick={() => field.onChange([...field.value, { name: '', year: new Date().getFullYear(), organization: '' }])}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Add Award
@@ -1293,7 +1293,7 @@ const BespokeSignup = () => {
                         newFeatures[index] = { ...feature, platform: e.target.value };
                         field.onChange(newFeatures);
                       }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       placeholder="Platform (e.g., Vogue, Instagram)"
                     />
                     <input
@@ -1304,7 +1304,7 @@ const BespokeSignup = () => {
                         newFeatures[index] = { ...feature, url: e.target.value };
                         field.onChange(newFeatures);
                       }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       placeholder="URL"
                     />
                   </div>
@@ -1312,7 +1312,7 @@ const BespokeSignup = () => {
                 <button
                   type="button"
                   onClick={() => field.onChange([...field.value, { platform: '', url: '', description: '' }])}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Add Feature
@@ -1325,7 +1325,7 @@ const BespokeSignup = () => {
 
       <button
         type="submit"
-        className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-purple-700 hover:bg-purple-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors"
+        className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-700 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
       >
         Continue to Verification & Bank
       </button>
@@ -1336,8 +1336,8 @@ const BespokeSignup = () => {
   const renderOTPVerification = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-purple-100 mb-4">
-          <Smartphone className="h-6 w-6 text-purple-600" />
+        <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
+          <Smartphone className="h-6 w-6 text-blue-600" />
         </div>
         <h3 className="text-lg font-medium text-gray-900 mb-2">Verify Your Email</h3>
         <p className="text-sm text-gray-600">
@@ -1363,7 +1363,7 @@ const BespokeSignup = () => {
               onChange={(e) => handleOtpChange(index, e.target.value)}
               onKeyDown={(e) => handleOtpKeyDown(index, e)}
               disabled={isOtpLocked || otpVerified}
-              className={`w-full h-14 text-center text-2xl font-bold border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${
+              className={`w-full h-14 text-center text-2xl font-bold border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                 otpVerified
                   ? 'border-green-300 bg-green-50'
                   : isOtpLocked
@@ -1392,7 +1392,7 @@ const BespokeSignup = () => {
             className={`text-sm font-medium flex items-center ${
               isTimerActive || isOtpLocked || isResending || otpVerified
                 ? 'text-gray-400 cursor-not-allowed'
-                : 'text-purple-700 hover:text-purple-800'
+                : 'text-blue-700 hover:text-blue-800'
             }`}
           >
             {isResending ? (
@@ -1414,7 +1414,7 @@ const BespokeSignup = () => {
         type="button"
         onClick={() => setSignupStep('form')}
         disabled={otpVerified}
-        className="w-full flex items-center justify-center gap-2 py-2 px-4 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full flex items-center justify-center gap-2 py-2 px-4 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <ArrowLeft className="h-4 w-4" />
         Back to Account Details
@@ -1425,10 +1425,10 @@ const BespokeSignup = () => {
   // Step 7: Final Step - Connect Bank
   const renderStep6 = () => (
     <div className="space-y-6">
-      <div className="bg-purple-50 border border-purple-200 rounded-lg p-6 mb-4">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-4">
         <div className="text-center">
-          <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-purple-100 mb-4">
-            <Shield className="h-8 w-8 text-purple-600" />
+          <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-blue-100 mb-4">
+            <Shield className="h-8 w-8 text-blue-600" />
           </div>
           <h3 className="text-xl font-medium text-gray-900 mb-2">Complete Your Profile</h3>
           <p className="text-sm text-gray-600 mb-4">
@@ -1463,7 +1463,7 @@ const BespokeSignup = () => {
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-gray-900">Bank Connection</span>
-              <span className="text-sm text-purple-600">Pending</span>
+              <span className="text-sm text-blue-600">Pending</span>
             </div>
           </div>
         </div>
@@ -1483,7 +1483,7 @@ const BespokeSignup = () => {
 
       <button
   onClick={handleSubmit(onFinalSubmit)}
-  className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-purple-700 hover:bg-purple-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors"
+  className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-700 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
 >
   Complete Registration & Go to Dashboard
 </button>
@@ -1516,7 +1516,7 @@ const BespokeSignup = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-purple-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center mb-2">
           <div className="relative w-20 h-20">
@@ -1566,7 +1566,7 @@ const BespokeSignup = () => {
                   else if (currentStep === 4) setSignupStep('services');
                   else if (currentStep === 5) setSignupStep('portfolio');
                 }}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Previous Step
@@ -1584,7 +1584,7 @@ const BespokeSignup = () => {
               Already have a creator account?{' '}
               <Link
                 href="/bespoke/login"
-                className="font-medium text-purple-700 hover:text-purple-800 transition-colors"
+                className="font-medium text-blue-700 hover:text-blue-800 transition-colors"
               >
                 Sign in here
               </Link>
@@ -1604,7 +1604,7 @@ const BespokeSignup = () => {
         {/* Benefits Section */}
         <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="p-4 bg-white rounded-xl border border-gray-200 text-center shadow-sm">
-            <Sparkles className="h-8 w-8 text-purple-600 mx-auto mb-2" />
+            <Sparkles className="h-8 w-8 text-blue-600 mx-auto mb-2" />
             <h4 className="text-sm font-medium text-gray-900 mb-1">Showcase Your Craft</h4>
             <p className="text-xs text-gray-600">Display your unique creations and craftsmanship</p>
           </div>

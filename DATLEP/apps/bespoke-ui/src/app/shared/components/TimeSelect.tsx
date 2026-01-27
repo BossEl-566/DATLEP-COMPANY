@@ -50,7 +50,7 @@ const TimeSelect: React.FC<TimeSelectProps> = ({
         <select
           id={name}
           {...register(name, { required: required ? `${label} is required` : false })}
-          className={`block w-full ${Icon ? 'pl-10' : 'pl-3'} pr-10 py-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 sm:text-sm ${
+          className={`block w-full ${Icon ? 'pl-10' : 'pl-3'} pr-10 py-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
             errors[name] ? 'border-red-300' : 'border-gray-300'
           }`}
         >
