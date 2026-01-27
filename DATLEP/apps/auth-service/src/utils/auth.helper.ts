@@ -7,7 +7,7 @@ import { sendEmail } from './sendMail';
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export const validateRegistrationData = (data: any, userType: 'user' | 'seller') => {
+export const validateRegistrationData = (data: any, userType: 'user' | 'seller' | 'bespoke') => {
     const { name, email, password, phone_number, country } = data;
 
     if (!name || !email || !password || (userType === 'seller' && (!phone_number || !country))) {
@@ -84,7 +84,7 @@ export const handleForgotPassword = async (
     req: Request, 
     res: Response, 
     next: NextFunction, 
-    userType: 'user' | 'seller'
+    userType: 'user' | 'seller' | 'bespoke'
 ) => {
     try {
         const { email } = req.body;
@@ -101,7 +101,11 @@ export const handleForgotPassword = async (
         // Check OTP restrictions - these will throw errors if restrictions exist
         await checkOtpRestriction(email, next);
         await trackOtpRequest(email, next);
-        await sendOtp(user.name, email, userType === 'user' ? 'user-forgot-password-mail' : 'seller-forgot-password-mail');
+        await sendOtp(user.name, email, 
+            userType === 'user' ? 'user-forgot-password-mail' : 
+            userType === 'seller' ? 'seller-forgot-password-mail' : 
+            'bespoke-forgot-password-mail'
+        );
         
         res.status(200).json({
             message: 'OTP sent to email for password reset'

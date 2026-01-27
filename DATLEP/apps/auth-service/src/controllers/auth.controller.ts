@@ -9,11 +9,12 @@ import {
   verifyForgotPasswordOtp,
   verifyOtp
 } from "../utils/auth.helper";
-import { Seller, Shop, User } from "@datlep/database";
+import { Seller, Shop, User, BespokeCreator } from "@datlep/database";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { setCookie } from "../utils/cookies/setCookie";
 import { sendPasswordResetConfirmation } from "../utils/sendMail";
+
 
 
 // Register a new user
@@ -375,64 +376,6 @@ export const verifySeller = async (
   }
 };
 
-
-// export const createShop = async (
-//   req: Request,
-//   res: Response,
-//   next: NextFunction
-// ) => {
-//   try {
-//     const {
-//       name,
-//       bio,
-//       category,
-//       seller,
-//       address,
-//       openingHours,
-//       shopType,
-//       timezone,
-//       website,
-//       socialLinks
-//     } = req.body;
-
-//     if (!name || !bio || !category || !seller || !address?.city || !address?.country || !openingHours || openingHours.length === 0) {
-//       return next(new ValidationError("All fields are required to create a shop"));
-//     }
-
-//     const shop = await Shop.create({
-//       name,
-//       bio,
-//       category,
-//       seller,
-//       address: {
-//         city: address.city,
-//         country: address.country,
-//         street: address.street || '',
-//         state: address.state || '',
-//         postalCode: address.postalCode || '',
-//         coordinates: address.coordinates || { type: 'Point', coordinates: [0, 0] }
-//       },
-//       openingHours,
-//       shopType: shopType || 'both',
-//       timezone: timezone || '',
-//       website: website || '',
-//       socialLinks: socialLinks || []
-//     });
-
-  
-
-//     res.status(201).json(shop);
-//   } catch (error) {
-//     next(error);
-//   }
-// };
-
-
-
-
-
-
-
 // Create a new shop for seller
 export const createShop = async (
   req: Request,
@@ -440,9 +383,6 @@ export const createShop = async (
   next: NextFunction
 ) => {
   try {
-    
-
-
     const {
       name,
       bio,
@@ -542,20 +482,6 @@ export const createShop = async (
   }
 };
 
-// skipping payment setup
-// export const skipPaymentSetup = async  (  req: Request,
-//   res: Response,
-//   next: NextFunction) =>{
-//     try {
-      
-//     } catch (error) {
-//       next(error)
-//     }
-//   }
-
-
-
-
 export const skipPaymentSetup = async (
   req: Request,
   res: Response,
@@ -572,18 +498,6 @@ export const skipPaymentSetup = async (
       });
     }
 
-    // Optional: Verify the authenticated user owns this seller account
-    // Uncomment if you have authentication middleware
-   
-    // if (req.user?.sellerId !== sellerId && req.user?.id !== sellerId) {
-    //   return res.status(403).json({
-    //     success: false,
-    //     message: 'Unauthorized to skip payment for this seller'
-    //   });
-    // }
-    
-
-    // Find the seller
     const seller = await Seller.findById(sellerId);
     
     if (!seller) {
@@ -878,6 +792,451 @@ export const refreshSellerToken = async (
   } catch (error) {
     next(error);
   }
+};
+
+
+// Register a new bespoke creator
+export const registerBespokeCreator = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    // Validate incoming data
+    validateRegistrationData(req.body, "bespoke");
+
+    const { name, email } = req.body;
+
+    // Check if creator already exists
+    const existingCreator = await BespokeCreator.findOne({ email }).lean();
+    if (existingCreator) {
+      return next(new ValidationError("Email already in use as a creator"));
+    }
+
+    // Check if email exists in User model
+    const existingUser = await User.findOne({ email }).lean();
+    if (existingUser) {
+      return next(new ValidationError("Email already in use as a user"));
+    }
+
+    // OTP handling
+    await checkOtpRestriction(email, next);
+    await trackOtpRequest(email, next);
+    await sendOtp(name, email, "bespoke-activation-mail");
+
+    res.status(200).json({
+      success: true,
+      message: "OTP sent to email for verification",
+      email
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+// Verify bespoke creator OTP
+export const verifyBespokeCreator = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email, otp, password, ...bespokeData } = req.body;
+
+    if (!email || !otp || !password) {
+      return next(
+        new ValidationError("Email, OTP and password are required")
+      );
+    }
+
+    // Verify OTP
+    await verifyOtp(email, otp, next);
+
+    // Check if creator already exists
+    const existingCreator = await BespokeCreator.findOne({ email });
+    if (existingCreator) {
+      return next(new ValidationError("Creator with this email already exists"));
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return next(new ValidationError("User with this email already exists"));
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create user first
+    const user = await User.create({
+      name: bespokeData.name,
+      email,
+      password: hashedPassword,
+      role: 'bespoke',
+      emailVerified: true
+    });
+
+    // Create bespoke creator profile linked to user
+    const bespokeCreator = await BespokeCreator.create({
+      user: user._id,
+      ...bespokeData,
+      email,
+      phone: bespokeData.phone,
+      experience: bespokeData.experience || 'beginner',
+      yearsOfExperience: bespokeData.yearsOfExperience || 0,
+      skills: bespokeData.skills || [],
+      techniques: bespokeData.techniques || [],
+      materialsExpertise: bespokeData.materialsExpertise || [],
+      portfolio: bespokeData.portfolio || [],
+      services: bespokeData.services || [],
+      customizationOptions: {
+        measurements: bespokeData.customizationOptions?.measurements ?? true,
+        fabricSelection: bespokeData.customizationOptions?.fabricSelection ?? true,
+        designConsultation: bespokeData.customizationOptions?.designConsultation ?? true,
+        multipleRevisions: bespokeData.customizationOptions?.multipleRevisions ?? false,
+        rushOrders: bespokeData.customizationOptions?.rushOrders ?? false
+      },
+      pricingModel: bespokeData.pricingModel || 'fixed',
+      minimumOrderValue: bespokeData.minimumOrderValue || 0,
+      depositPercentage: bespokeData.depositPercentage || 50,
+      responseTime: bespokeData.responseTime || 'within-day',
+      consultationHours: bespokeData.consultationHours || [],
+      languages: bespokeData.languages || ['English'],
+      workshopLocation: {
+        city: bespokeData.workshopLocation?.city || '',
+        country: bespokeData.workshopLocation?.country || 'NG',
+        acceptsLocalClients: bespokeData.workshopLocation?.acceptsLocalClients ?? true,
+        acceptsInternationalClients: bespokeData.workshopLocation?.acceptsInternationalClients ?? false
+      },
+      shippingOptions: bespokeData.shippingOptions || [],
+      fittingOptions: bespokeData.fittingOptions || [],
+      paymentMethods: bespokeData.paymentMethods || ['bank-transfer'],
+      preferredCurrency: bespokeData.preferredCurrency || 'NGN',
+      isVerified: false,
+      verificationLevel: 'none',
+      badges: [],
+      currentWorkload: 0,
+      maxProjectsPerMonth: 5,
+      isAcceptingNewProjects: true,
+      notificationPreferences: {
+        newInquiry: true,
+        projectUpdates: true,
+        reviewReceived: true,
+        paymentReceived: true
+      },
+      isActive: true,
+      isFeatured: false,
+      profileCompletion: 10, // Initial completion percentage
+      averageRating: 0,
+      totalProjects: 0,
+      completedProjects: 0,
+      reviews: [],
+      successRate: 100,
+      repeatClientRate: 0
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Bespoke creator registered successfully",
+      creator: {
+        id: bespokeCreator._id,
+        userId: user._id,
+        name: bespokeCreator.businessName || bespokeData.name,
+        email: bespokeCreator.email,
+        specialization: bespokeCreator.specialization
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Login bespoke creator
+export const loginBespokeCreator = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email, password } = req.body;
+    
+    if (!email || !password) {
+      return next(new ValidationError("Email and password are required"));
+    } 
+    
+    // Find user first
+    const user = await User.findOne({ email, role: 'bespoke-creator' });
+    if (!user) {
+      return next(new AuthenticationError("Invalid email or password"));
+    }
+    
+    // Verify password
+    const isMatch = await bcrypt.compare(password, user.password!);
+    if (!isMatch) {
+      return next(new AuthenticationError("Invalid email or password"));
+    }
+
+    // Find bespoke creator profile
+    const creator = await BespokeCreator.findOne({ user: user._id });
+    if (!creator) {
+      return next(new AuthenticationError("Creator profile not found"));
+    }
+
+    // Generate access and refresh tokens 
+    const accessToken = jwt.sign({
+      id: creator._id,
+      userId: user._id,
+      email: user.email,
+      role: 'bespoke-creator'
+    }, process.env.ACCESS_TOKEN_SECRET!, { expiresIn: "15m" });
+
+    const refreshToken = jwt.sign({
+      id: creator._id,
+      userId: user._id,
+      email: user.email,
+      role: 'bespoke-creator'
+    }, process.env.REFRESH_TOKEN_SECRET!, { expiresIn: "7d" });
+
+    // Send tokens in response
+    setCookie(req, res, 'bespoke_refreshToken', refreshToken);
+    setCookie(req, res, 'bespoke_accessToken', accessToken);
+    
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      creator: {
+        id: creator._id,
+        userId: user._id,
+        name: creator.businessName || user.name,
+        email: user.email,
+        specialization: creator.specialization,
+        profileCompletion: creator.profileCompletion,
+        isVerified: creator.isVerified,
+        verificationLevel: creator.verificationLevel
+      },
+      token: accessToken
+    });
+
+  } catch (error) {
+    return next(error); 
+  }
+};
+
+// Get logged in bespoke creator
+export const getLoggedInCreator = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const user = req.user; // Assume user is attached to req in isAuthenticated middleware
+    if (!user) {
+      return next(new AuthenticationError("Creator not found"));
+    }
+    
+    // Get bespoke creator details
+    const creator = await BespokeCreator.findOne({ user: user.id })
+      .populate('user', 'name email')
+      .lean();
+    
+    if (!creator) {
+      return next(new AuthenticationError("Creator profile not found"));
+    }
+    
+    res.status(200).json({
+      success: true,
+      creator
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+// Bespoke creator refresh token 
+export const refreshBespokeToken = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const refreshToken = req.cookies.bespoke_refreshToken;
+
+    if (!refreshToken) {
+      res.status(401).json({ message: "No bespoke creator refresh token provided" });
+      return;
+    }
+
+    const decoded = jwt.verify(
+      refreshToken,
+      process.env.REFRESH_TOKEN_SECRET!
+    ) as { id: string; userId: string; role: "bespoke-creator" };
+
+    if (decoded.role !== "bespoke-creator") {
+      res.status(403).json({ message: "Invalid bespoke creator refresh token" });
+      return;
+    }
+
+    const creator = await BespokeCreator.findById(decoded.id);
+    if (!creator) {
+      res.status(401).json({ message: "Bespoke creator not found" });
+      return;
+    }
+
+    const newAccessToken = jwt.sign(
+      { id: creator._id, userId: decoded.userId, role: "bespoke-creator" },
+      process.env.ACCESS_TOKEN_SECRET!,
+      { expiresIn: "15m" }
+    );
+
+    setCookie(req, res, "bespoke_accessToken", newAccessToken);
+
+    res.status(200).json({ success: true });
+    return;
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Forgot Password for bespoke creator
+export const bespokeForgotPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    await handleForgotPassword(req, res, next, 'bespoke');
+  } catch (error) {
+    return next(error);
+  }
+}
+
+// Verify for Reset OTP for bespoke creator
+export const verifyBespokeForgotPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    await verifyForgotPasswordOtp(req, res, next);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+// Reset Password for bespoke creator
+export const resetBespokePassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email, newPassword } = req.body;
+    if (!email || !newPassword) {
+      return next(new ValidationError("Email and new password are required"));
+    }
+    
+    // Find user with bespoke-creator role
+    const user = await User.findOne({ email, role: 'bespoke-creator' });
+    if (!user) {
+      return next(new ValidationError("Bespoke creator with this email does not exist"));
+    }
+    
+    // Compare new password with old password
+    const isSamePassword = await bcrypt.compare(newPassword, user.password!);
+    if (isSamePassword) {
+      return next(new ValidationError("New password cannot be the same as the old password"));
+    }
+    
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await User.updateOne({ email, role: 'bespoke-creator' }, { password: hashedPassword });
+    
+    // Send confirmation email
+    try {
+      const creator = await BespokeCreator.findOne({ email });
+      await sendPasswordResetConfirmation(email, creator?.businessName || user.name);
+    } catch (emailError) {
+      console.error('Failed to send confirmation email:', emailError);
+      // Don't fail the whole request if email fails
+    }
+    
+    res.status(200).json({
+      success: true,
+      message: "Password reset successfully"
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+// Update bespoke creator profile
+export const updateBespokeProfile = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const creatorId = req.params.id || req.user?.id;
+    const updateData = req.body;
+
+    if (!creatorId) {
+      return next(new ValidationError("Creator ID is required"));
+    }
+
+    // Calculate profile completion percentage
+    const completionPercentage = calculateProfileCompletion(updateData);
+
+    const updatedCreator = await BespokeCreator.findByIdAndUpdate(
+      creatorId,
+      {
+        ...updateData,
+        profileCompletion: completionPercentage,
+        updatedAt: new Date()
+      },
+      { new: true }
+    ).select('-__v');
+
+    if (!updatedCreator) {
+      return next(new ValidationError("Bespoke creator not found"));
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      creator: updatedCreator,
+      profileCompletion: completionPercentage
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Helper function to calculate profile completion percentage
+const calculateProfileCompletion = (creatorData: any): number => {
+  const totalFields = 20; // Adjust based on important fields
+  let completedFields = 0;
+
+  // Check required fields
+  if (creatorData.businessName) completedFields++;
+  if (creatorData.specialization) completedFields++;
+  if (creatorData.bio) completedFields++;
+  if (creatorData.experience) completedFields++;
+  if (creatorData.yearsOfExperience) completedFields++;
+  if (creatorData.skills?.length > 0) completedFields++;
+  if (creatorData.services?.length > 0) completedFields++;
+  if (creatorData.pricingModel) completedFields++;
+  if (creatorData.workshopLocation?.city) completedFields++;
+  if (creatorData.workshopLocation?.country) completedFields++;
+  if (creatorData.consultationHours?.length > 0) completedFields++;
+  if (creatorData.paymentMethods?.length > 0) completedFields++;
+  if (creatorData.preferredCurrency) completedFields++;
+  if (creatorData.portfolio?.length > 0) completedFields++;
+  if (creatorData.techniques?.length > 0) completedFields++;
+  if (creatorData.materialsExpertise?.length > 0) completedFields++;
+  if (creatorData.languages?.length > 0) completedFields++;
+  if (creatorData.responseTime) completedFields++;
+  if (creatorData.fittingOptions?.length > 0) completedFields++;
+  if (creatorData.shippingOptions?.length > 0) completedFields++;
+
+  return Math.round((completedFields / totalFields) * 100);
 };
 
 

@@ -3,6 +3,7 @@ import { Schema, model, models, Document, Model } from 'mongoose';
 export interface IBespokeCreator extends Document {
   // User account (linked to User model)
   user: Schema.Types.ObjectId;
+  email: string;
   
   // Specialization
   specialization: 'tailor' | 'shoemaker' | 'leather-worker' | 'jewelry-maker' | 'embroidery-artist' | 'knitting-expert' | 'weaving-specialist' | 'dressmaker' | 'suits-specialist' | 'wedding-attire' | 'traditional-wear' | 'children-wear' | 'costume-designer';
