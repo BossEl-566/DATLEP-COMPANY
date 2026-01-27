@@ -1516,113 +1516,122 @@ const BespokeSignup = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="flex justify-center mb-2">
-          <div className="relative w-20 h-20">
-            <Image
-              src={logo}
-              alt="DATLEP Logo"
-              width={80}
-              height={80}
-              className="object-contain"
-              priority
-            />
-          </div>
-        </div>
-        
-        <h2 className="text-center text-3xl font-bold text-gray-900 mb-2">
-          Become a Bespoke Creator
-        </h2>
-        <p className="text-center text-gray-600 mb-8">
-          Showcase your craftsmanship and connect with clients who value custom creations
-        </p>
-      </div>
-
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-4xl">
-        <div className="bg-white py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 border border-gray-200">
-          {/* Progress Stepper */}
-          <StepperProgress
-            currentStep={currentStep}
-            steps={stepTitles}
-            icons={stepIcons}
-            maxSteps={6}
-          />
-
-          {/* Current Step Content */}
-          <div className="mt-8">
-            {renderCurrentStep()}
-          </div>
-
-          {/* Navigation Buttons for non-OTP steps */}
-          {signupStep !== 'otp' && currentStep > 1 && currentStep < 6 && (
-            <div className="mt-6 flex justify-between">
-              <button
-                type="button"
-                onClick={() => {
-                  setCurrentStep(currentStep - 1);
-                  if (currentStep === 2) setSignupStep('form');
-                  else if (currentStep === 3) setSignupStep('profile');
-                  else if (currentStep === 4) setSignupStep('services');
-                  else if (currentStep === 5) setSignupStep('portfolio');
-                }}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Previous Step
-              </button>
-              
-              <div className="text-sm text-gray-500">
-                Step {currentStep} of 6
-              </div>
-            </div>
-          )}
-
-          {/* Login Link */}
-          <div className="mt-8 text-center">
-            <p className="text-sm text-gray-600">
-              Already have a creator account?{' '}
-              <Link
-                href="/bespoke/login"
-                className="font-medium text-blue-700 hover:text-blue-800 transition-colors"
-              >
-                Sign in here
-              </Link>
-            </p>
-            <p className="text-sm text-gray-600 mt-2">
-              Want to sell ready-made products?{' '}
-              <Link
-                href="/seller/signup"
-                className="font-medium text-blue-700 hover:text-blue-800 transition-colors"
-              >
-                Become a Fashion Seller
-              </Link>
-            </p>
-          </div>
-        </div>
-
-        {/* Benefits Section */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-4 bg-white rounded-xl border border-gray-200 text-center shadow-sm">
-            <Sparkles className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-            <h4 className="text-sm font-medium text-gray-900 mb-1">Showcase Your Craft</h4>
-            <p className="text-xs text-gray-600">Display your unique creations and craftsmanship</p>
-          </div>
-          
-          <div className="p-4 bg-white rounded-xl border border-gray-200 text-center shadow-sm">
-            <Users className="h-8 w-8 text-green-600 mx-auto mb-2" />
-            <h4 className="text-sm font-medium text-gray-900 mb-1">Connect with Clients</h4>
-            <p className="text-xs text-gray-600">Find clients who appreciate custom, handcrafted work</p>
-          </div>
-          
-          <div className="p-4 bg-white rounded-xl border border-gray-200 text-center shadow-sm">
-            <Banknote className="h-8 w-8 text-amber-600 mx-auto mb-2" />
-            <h4 className="text-sm font-medium text-gray-900 mb-1">Fair Pricing</h4>
-            <p className="text-xs text-gray-600">Set your own prices and earn what you deserve</p>
-          </div>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex flex-col justify-center py-6 sm:py-12 px-4 sm:px-6 lg:px-8">
+  <div className="sm:mx-auto sm:w-full sm:max-w-6xl">
+    {/* Header */}
+    <div className="flex justify-center mb-4">
+      <div className="relative w-16 h-16 sm:w-20 sm:h-20">
+        <Image
+          src={logo}
+          alt="DATLEP Logo"
+          width={80}
+          height={80}
+          className="object-contain"
+          priority
+        />
       </div>
     </div>
+    
+    <h2 className="text-center text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+      Become a Bespoke Creator
+    </h2>
+    <p className="text-center text-sm sm:text-base text-gray-600 mb-6 sm:mb-8 max-w-2xl mx-auto">
+      Showcase your craftsmanship and connect with clients who value custom creations
+    </p>
+
+    {/* Main Container */}
+    <div className="bg-white py-6 sm:py-8 px-4 sm:px-6 shadow-xl rounded-2xl sm:rounded-3xl border border-gray-200">
+      {/* Compact Stepper */}
+      <div className="mb-6 sm:mb-8">
+        <StepperProgress
+          currentStep={currentStep}
+          steps={[
+            'Personal',
+            'Profile',
+            'Services',
+            'Portfolio',
+            'Verify',
+            'Bank'
+          ]}
+          icons={stepIcons}
+          maxSteps={6}
+        />
+      </div>
+
+      {/* Current Step Content */}
+      <div className="mb-6 sm:mb-8">
+        {renderCurrentStep()}
+      </div>
+
+      {/* Navigation Buttons */}
+      {signupStep !== 'otp' && currentStep > 1 && currentStep < 6 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-gray-100">
+          <button
+            type="button"
+            onClick={() => {
+              setCurrentStep(currentStep - 1);
+              if (currentStep === 2) setSignupStep('form');
+              else if (currentStep === 3) setSignupStep('profile');
+              else if (currentStep === 4) setSignupStep('services');
+              else if (currentStep === 5) setSignupStep('portfolio');
+            }}
+            className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Previous Step
+          </button>
+          
+          <div className="text-sm text-gray-500 text-center sm:text-right">
+            Step {currentStep} of 6
+          </div>
+        </div>
+      )}
+
+      {/* Login Links */}
+      <div className="mt-8 text-center space-y-2">
+        <p className="text-sm text-gray-600">
+          Already have a creator account?{' '}
+          <Link
+            href="/bespoke/login"
+            className="font-medium text-blue-700 hover:text-blue-800 transition-colors"
+          >
+            Sign in here
+          </Link>
+        </p>
+        <p className="text-sm text-gray-600">
+          Want to sell ready-made products?{' '}
+          <Link
+            href="/seller/signup"
+            className="font-medium text-blue-700 hover:text-blue-800 transition-colors"
+          >
+            Become a Fashion Seller
+          </Link>
+        </p>
+      </div>
+    </div>
+
+    {/* Compact Benefits Section */}
+    <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+      <div className="p-4 bg-white rounded-xl border border-gray-200 text-center shadow-sm hover:shadow-md transition-shadow">
+        <Sparkles className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 mx-auto mb-2" />
+        <h4 className="text-xs sm:text-sm font-medium text-gray-900 mb-1">Showcase Your Craft</h4>
+        <p className="text-xs text-gray-600">Display your unique creations</p>
+      </div>
+      
+      <div className="p-4 bg-white rounded-xl border border-gray-200 text-center shadow-sm hover:shadow-md transition-shadow">
+        <Users className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 mx-auto mb-2" />
+        <h4 className="text-xs sm:text-sm font-medium text-gray-900 mb-1">Connect with Clients</h4>
+        <p className="text-xs text-gray-600">Find clients who value custom work</p>
+      </div>
+      
+      <div className="p-4 bg-white rounded-xl border border-gray-200 text-center shadow-sm hover:shadow-md transition-shadow">
+        <Banknote className="h-6 w-6 sm:h-8 sm:w-8 text-amber-600 mx-auto mb-2" />
+        <h4 className="text-xs sm:text-sm font-medium text-gray-900 mb-1">Fair Pricing</h4>
+        <p className="text-xs text-gray-600">Set your own prices</p>
+      </div>
+    </div>
+  </div>
+</div>
   );
 };
 
