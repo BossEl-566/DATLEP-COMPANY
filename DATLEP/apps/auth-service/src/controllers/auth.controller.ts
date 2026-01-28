@@ -812,13 +812,6 @@ export const registerBespokeCreator = async (
     if (existingCreator) {
       return next(new ValidationError("Email already in use as a creator"));
     }
-
-    // Check if email exists in User model
-    const existingUser = await User.findOne({ email }).lean();
-    if (existingUser) {
-      return next(new ValidationError("Email already in use as a user"));
-    }
-
     // OTP handling
     await checkOtpRestriction(email, next);
     await trackOtpRequest(email, next);
@@ -859,21 +852,24 @@ export const verifyBespokeCreator = async (
     }
 
     // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return next(new ValidationError("User with this email already exists"));
-    }
+    let user = await User.findOne({ email });
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+if (!user) {
+  const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user first
-    const user = await User.create({
-      name: bespokeData.name,
-      email,
-      password: hashedPassword,
-      role: 'bespoke',
-      emailVerified: true
-    });
+  user = await User.create({
+    name: bespokeData.name,
+    email,
+    password: hashedPassword,
+    role: 'bespoke',
+    emailVerified: true
+  });
+} else {
+  // upgrade existing user
+  user.role = 'bespoke';
+  user.emailVerified = true;
+  await user.save();
+}
 
     // Create bespoke creator profile linked to user
     const bespokeCreator = await BespokeCreator.create({
