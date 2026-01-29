@@ -93,6 +93,7 @@ export interface ShippingOption {
 
 export interface BespokeFormData {
   // Account Info
+  name: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -155,6 +156,7 @@ export interface BespokeFormData {
 
 // API Types
 type RegistrationRequest = {
+  name: string;
   email: string;
   password: string;
   phone: string;
@@ -254,10 +256,12 @@ const BespokeSignup = () => {
   ];
 
   const handleAccountSubmit = async (data: Partial<BespokeFormData>) => {
+      console.log('Form data received:', data);
     setFormError('');
     
     try {
       const registrationData: RegistrationRequest = {
+        name: data.name!,
         email: data.email!,
         password: data.password!,
         phone: data.phone!,
@@ -300,38 +304,38 @@ const BespokeSignup = () => {
   };
 
   const handleOtpSubmit = async (enteredOtp: string) => {
-    if (!userData) return;
-    
-    setOtpError('');
-    
-    try {
-      const verificationData = {
-        ...userData,
-        otp: enteredOtp
-      };
+  if (!userData) return;
+  
+  setOtpError('');
+  
+  try {
+    const verificationData = {
+      ...userData,
+      otp: enteredOtp
+    };
 
-      const response = await otpVerificationMutation.mutateAsync(verificationData);
-      
-      if (response.creator?.id) {
-        setCreatorId(response.creator.id);
-      }
-      
-      if (response.token) {
-        localStorage.setItem('bespoke_token', response.token);
-      }
-
-      setOtpVerified(true);
-      
-      // Move to profile setup step
-      setTimeout(() => {
-        setSignupStep('profile');
-        setCurrentStep(2);
-      }, 1000);
-      
-    } catch (error: any) {
-      setOtpError(error.message);
+    const response = await otpVerificationMutation.mutateAsync(verificationData);
+    
+    if (response.creator?.id) {
+      setCreatorId(response.creator.id);
     }
-  };
+    
+    if (response.token) {
+      localStorage.setItem('bespoke_token', response.token);
+    }
+
+    setOtpVerified(true);
+    
+    // Move to profile setup step
+    setTimeout(() => {
+      setSignupStep('profile');
+      setCurrentStep(2);
+    }, 1000);
+    
+  } catch (error: any) {
+    setOtpError(error.message);
+  }
+};
 
   const renderStepContent = () => {
     switch (signupStep) {

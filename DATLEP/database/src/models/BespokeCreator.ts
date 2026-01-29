@@ -2,6 +2,7 @@ import { Schema, model, models, Document, Model } from 'mongoose';
 
 export interface IBespokeCreator extends Document {
   // User account (linked to User model)
+  name: string;
   user: Schema.Types.ObjectId;
   email: string;
   

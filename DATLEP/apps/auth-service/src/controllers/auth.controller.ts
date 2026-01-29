@@ -802,10 +802,14 @@ export const registerBespokeCreator = async (
   next: NextFunction
 ) => {
   try {
-    // Validate incoming data
-    validateRegistrationData(req.body, "bespoke");
 
-    const { name, email } = req.body;
+    const { name, email, password, phone } = req.body;
+
+    if ( !name || !email || !password || !phone) {
+      return next(
+        new ValidationError("Name, email, password, and phone are required")
+      );
+    }
 
     // Check if creator already exists
     const existingCreator = await BespokeCreator.findOne({ email }).lean();
@@ -836,7 +840,7 @@ export const verifyBespokeCreator = async (
   try {
     const { email, otp, password, ...bespokeData } = req.body;
 
-    if (!email || !otp || !password) {
+    if (!email || !password || !otp) {
       return next(
         new ValidationError("Email, OTP and password are required")
       );

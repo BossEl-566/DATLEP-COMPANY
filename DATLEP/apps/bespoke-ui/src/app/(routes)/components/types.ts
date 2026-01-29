@@ -40,6 +40,7 @@ export interface ShippingOption {
 
 export interface BespokeFormData {
   // Account Info
+  name: string;
   email: string;
   password: string;
   confirmPassword: string;

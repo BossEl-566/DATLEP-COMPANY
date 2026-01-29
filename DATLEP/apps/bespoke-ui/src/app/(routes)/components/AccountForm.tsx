@@ -15,7 +15,8 @@ import {
   AlertCircle,
   Scissors,
   Shirt,
-  Diamond
+  Diamond,
+  User
 } from 'lucide-react';
 import { BespokeFormData, BespokeSpecialization } from './types';
 
@@ -60,6 +61,7 @@ const AccountForm: React.FC<AccountFormProps> = ({
   } = useForm<Partial<BespokeFormData>>({
     mode: 'onChange',
     defaultValues: {
+      name: '',
       email: '',
       password: '',
       confirmPassword: '',
@@ -71,12 +73,14 @@ const AccountForm: React.FC<AccountFormProps> = ({
     },
   });
 
+  const name = watch('name');
   const email = watch('email');
   const password = watch('password');
   const specialization = watch('specialization');
   
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+  const nameRegex = /^[A-Za-z\s]+$/; // Basic name validation allowing letters and spaces
 
   const onFormSubmit: SubmitHandler<Partial<BespokeFormData>> = (data) => {
     onSubmit(data);
@@ -95,6 +99,57 @@ const AccountForm: React.FC<AccountFormProps> = ({
               </p>
             </div>
           </div>
+        </div>
+
+        {/* Name Field */}
+        <div>
+          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+            Full Name *
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <User className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              id="name"
+              type="text"
+              {...register('name', {
+                required: 'Full name is required',
+                pattern: { 
+                  value: nameRegex, 
+                  message: 'Name should only contain letters and spaces' 
+                },
+                minLength: { 
+                  value: 2, 
+                  message: 'Name must be at least 2 characters' 
+                },
+                maxLength: { 
+                  value: 100, 
+                  message: 'Name is too long' 
+                }
+              })}
+              className={`block w-full pl-10 pr-10 py-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 sm:text-sm ${
+                errors.name ? 'border-red-300' : 'border-gray-300'
+              } ${name && !errors.name ? 'border-green-300' : ''}`}
+              placeholder="Enter your full name"
+            />
+            {name && !errors.name && (
+              <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                <Check className="h-5 w-5 text-green-500" />
+              </div>
+            )}
+            {errors.name && (
+              <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                <X className="h-5 w-5 text-red-500" />
+              </div>
+            )}
+          </div>
+          {errors.name && (
+            <p className="mt-2 text-sm text-red-600 flex items-center">
+              <AlertCircle className="w-4 h-4 mr-1" />
+              {errors.name.message}
+            </p>
+          )}
         </div>
 
         {/* Specialization Selection */}

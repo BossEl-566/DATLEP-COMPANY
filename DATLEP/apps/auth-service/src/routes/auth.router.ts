@@ -24,8 +24,8 @@ router.post('/create-shop', createShop);
 router.post('/skip-seller-payment', skipPaymentSetup )
 router.post('/paystack-webhook', paystackSetup );
 router.post('/seller-login', sellerLogin);
-router.post("/register-bespoke", registerBespokeCreator);
-router.post("/verify-bespoke", verifyBespokeCreator);
+router.post("/register-bespoke", verifyBespokeCreator);
+router.post("/verify-bespoke", registerBespokeCreator);
 router.post("/login-bespoke", loginBespokeCreator);
 router.post("/bespoke-refresh-token", refreshBespokeToken);
 router.post("/forgot-password-bespoke", bespokeForgotPassword);
