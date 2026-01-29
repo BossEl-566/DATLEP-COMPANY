@@ -25,6 +25,7 @@ interface FormInputProps<T extends FieldValues> {
   min?: number;
   max?: number;
   step?: string;
+  className?: string;
 }
 
 const FormInput = <T extends FieldValues>({
@@ -44,6 +45,7 @@ const FormInput = <T extends FieldValues>({
   min,
   max,
   step,
+  className,
 }: FormInputProps<T>) => {
   const error = errors[name];
 
