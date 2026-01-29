@@ -15,7 +15,7 @@ import {
   Building,
   User
 } from 'lucide-react';
-import { BespokeFormData, FittingOption } from './types';
+import { BespokeFormData, FittingOption, PaymentMethod } from './types';
 import dynamic from 'next/dynamic';
 
 // Dynamically import Paystack inline component to avoid SSR issues
@@ -73,24 +73,24 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
     currency: 'NGN',
   };
 
-  const onFormSubmit: SubmitHandler<Partial<BespokeFormData>> = (data) => {
-    // Check if payment methods are connected
-    if (!bankConnected && !mobileMoneyConnected) {
-      alert('Please connect at least one payment method');
-      return;
-    }
-    
-    // Filter payment methods based on what's connected
-    const connectedPaymentMethods = [];
-    if (bankConnected) connectedPaymentMethods.push('bank-transfer');
-    if (mobileMoneyConnected) connectedPaymentMethods.push('mobile-money');
-    
-    const formData = {
-      ...data,
-      paymentMethods: connectedPaymentMethods,
-    };
-    // onSubmit(formData);
-  };
+const onFormSubmit: SubmitHandler<Partial<BespokeFormData>> = (data) => {
+  if (!bankConnected && !mobileMoneyConnected) {
+    alert('Please connect at least one payment method');
+    return;
+  }
+
+  const connectedPaymentMethods: PaymentMethod[] = [
+  ...(bankConnected ? (['bank-transfer'] as PaymentMethod[]) : []),
+  ...(mobileMoneyConnected ? (['mobile-money'] as PaymentMethod[]) : []),
+];
+
+
+  onSubmit({
+    ...data,
+    paymentMethods: connectedPaymentMethods,
+  });
+};
+
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
