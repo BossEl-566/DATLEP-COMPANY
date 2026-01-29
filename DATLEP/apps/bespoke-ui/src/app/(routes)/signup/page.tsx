@@ -194,7 +194,7 @@ const BespokeSignup = () => {
   // Mutation for registration (sends OTP)
   const registrationMutation = useMutation({
     mutationFn: async (data: RegistrationRequest) => {
-      const response = await api.post('/verify-bespoke', data);
+      const response = await api.post('/send-bespoke-otp', data);
       return response.data;
     },
     onError: (error: any) => {
@@ -205,7 +205,7 @@ const BespokeSignup = () => {
   // Mutation for OTP verification
   const otpVerificationMutation = useMutation({
     mutationFn: async (data: OTPVerificationRequest) => {
-      const response = await api.post('/login-bespoke', data);
+      const response = await api.post('/verify-bespoke-otp', data);
       return response.data;
     },
     onError: (error: any) => {

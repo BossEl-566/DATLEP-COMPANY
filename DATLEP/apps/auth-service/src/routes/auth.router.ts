@@ -1,6 +1,6 @@
 import express from 'express';
 import { Router } from 'express';
-import { bespokeForgotPassword, createShop, getLoggedInSeller, getUser, loginBespokeCreator, loginUser, paystackSetup, refreshBespokeToken, refreshSellerToken, refreshToken, registerBespokeCreator, registerSeller, resetBespokePassword, resetUserPassword, sellerLogin, skipPaymentSetup, userForgotPassword, userRegistration, verifyBespokeCreator, verifyBespokeForgotPassword, verifySeller, verifyUserForgotPassword, verifyUserOtp } from '../controllers/auth.controller';
+import { bespokeForgotPassword, createShop, getLoggedInSeller, getUser, loginBespokeCreator, loginUser, paystackSetup, refreshBespokeToken, refreshSellerToken, refreshToken,registerSeller, resetBespokePassword, resetUserPassword, sellerLogin, sendBespokeCreatorOtp, skipPaymentSetup, userForgotPassword, userRegistration, verifyBespokeCreator, verifyBespokeForgotPassword, verifySeller, verifyUserForgotPassword, verifyUserOtp } from '../controllers/auth.controller';
 import isUserAuthenticated from '../../../../packages/middleware/isUserAuthenticated';
 import isSellerAuthenticated from '../../../../packages/middleware/isSellerAuthenticated';
 
@@ -24,8 +24,8 @@ router.post('/create-shop', createShop);
 router.post('/skip-seller-payment', skipPaymentSetup )
 router.post('/paystack-webhook', paystackSetup );
 router.post('/seller-login', sellerLogin);
-router.post("/register-bespoke", verifyBespokeCreator);
-router.post("/verify-bespoke", registerBespokeCreator);
+router.post("/verify-bespoke-otp", verifyBespokeCreator);
+router.post("/send-bespoke-otp", sendBespokeCreatorOtp);
 router.post("/login-bespoke", loginBespokeCreator);
 router.post("/bespoke-refresh-token", refreshBespokeToken);
 router.post("/forgot-password-bespoke", bespokeForgotPassword);

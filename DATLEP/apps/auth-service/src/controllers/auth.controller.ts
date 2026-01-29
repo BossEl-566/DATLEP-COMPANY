@@ -796,7 +796,7 @@ export const refreshSellerToken = async (
 
 
 // Register a new bespoke creator
-export const registerBespokeCreator = async (
+export const sendBespokeCreatorOtp = async (
   req: Request,
   res: Response,
   next: NextFunction
