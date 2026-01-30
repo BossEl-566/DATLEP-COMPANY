@@ -9,11 +9,8 @@ import {
   Check, 
   Globe, 
   Shield,
-  AlertCircle,
   Upload,
   FileText,
-  Building,
-  User
 } from 'lucide-react';
 import { BespokeFormData, FittingOption, PaymentMethod } from './types';
 import dynamic from 'next/dynamic';
