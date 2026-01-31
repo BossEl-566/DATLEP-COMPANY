@@ -999,12 +999,12 @@ export const updateBespokeCreator = async (
       ALLOWED_CREATOR_UPDATES
     );
 
-    if (Object.keys(updateData).length === 0) {
+    if (!Object.keys(updateData).length) {
       return next(new ValidationError("No valid fields to update"));
     }
 
     const creator = await BespokeCreator.findOneAndUpdate(
-      { user: req.user.id }, // from auth middleware
+      { user: req.user.id }, // 🔐 bound to authenticated user
       { $set: updateData },
       { new: true, runValidators: true }
     );
@@ -1018,10 +1018,11 @@ export const updateBespokeCreator = async (
       message: "Profile updated successfully",
       creator
     });
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 };
+
 
 // Login bespoke creator
 export const loginBespokeCreator = async (

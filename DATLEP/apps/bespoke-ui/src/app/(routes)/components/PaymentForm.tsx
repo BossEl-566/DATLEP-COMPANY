@@ -13,32 +13,62 @@ import {
   FileText,
 } from 'lucide-react';
 import { BespokeFormData, FittingOption, PaymentMethod } from './types';
-import dynamic from 'next/dynamic';
+import axios from 'axios';
+import { useMutation } from '@tanstack/react-query';
 
-// Dynamically import Paystack inline component to avoid SSR issues
-// const PaystackButton = dynamic(() => import('react-paystack').then(mod => mod.PaystackButton), {
-//   ssr: false,
-//   loading: () => <div>Loading payment options...</div>
-// });
+// API Configuration
+const API_BASE_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:5000';
 
 interface PaymentFormProps {
   onSubmit: (data: Partial<BespokeFormData>) => void;
   isSubmitting?: boolean;
   sellerId?: string;
   shopId?: string;
+  creatorId?: string; // Add creatorId prop to identify the creator
+  token?: string; // Add token prop for authentication
 }
 
 const PaymentForm: React.FC<PaymentFormProps> = ({
   onSubmit,
   isSubmitting = false,
   sellerId,
-  shopId
+  shopId,
+  creatorId,
+  token
 }) => {
   const [paymentMethod, setPaymentMethod] = useState<'bank' | 'mobile-money'>('bank');
   const [connectingBank, setConnectingBank] = useState(false);
   const [bankConnected, setBankConnected] = useState(false);
   const [mobileMoneyConnected, setMobileMoneyConnected] = useState(false);
   const [verificationDocs, setVerificationDocs] = useState<File[]>([]);
+  const [apiError, setApiError] = useState<string>('');
+  const [apiSuccess, setApiSuccess] = useState<boolean>(false);
+
+  const api = axios.create({
+    baseURL: `${API_BASE_URL}/api`,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+  });
+
+  // Mutation for updating creator profile
+  const updateCreatorMutation = useMutation({
+    mutationFn: async (data: Partial<BespokeFormData> & { creatorId?: string }) => {
+      if (!creatorId) {
+        throw new Error('Creator ID is required');
+      }
+      
+      const response = await api.put('/update-bespoke-creator', {
+        creatorId,
+        ...data
+      });
+      return response.data;
+    },
+    onError: (error: any) => {
+      throw new Error(error.response?.data?.message || 'Failed to update creator profile');
+    },
+  });
 
   const {
     register,
@@ -61,38 +91,104 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
     },
   });
 
-  // Paystack Configuration
-  const paystackConfig = {
-    reference: new Date().getTime().toString(),
-    email: sellerId ? `${sellerId}@datlep.com` : 'creator@datlep.com',
-    amount: 1000, // 10 NGN verification fee
-    publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || 'pk_test_your_public_key',
-    currency: 'NGN',
+  const onFormSubmit: SubmitHandler<Partial<BespokeFormData>> = async (data) => {
+    if (!bankConnected && !mobileMoneyConnected) {
+      alert('Please connect at least one payment method');
+      return;
+    }
+
+    const connectedPaymentMethods: PaymentMethod[] = [
+      ...(bankConnected ? (['bank-transfer'] as PaymentMethod[]) : []),
+      ...(mobileMoneyConnected ? (['mobile-money'] as PaymentMethod[]) : []),
+    ];
+
+    const formData = {
+      ...data,
+      paymentMethods: connectedPaymentMethods,
+    };
+
+    try {
+      setApiError('');
+      
+      // First, update the creator profile via API
+      if (creatorId) {
+        const updateData = {
+          workshopLocation: formData.workshopLocation,
+          fittingOptions: formData.fittingOptions,
+          paymentMethods: formData.paymentMethods,
+          preferredCurrency: formData.preferredCurrency,
+          // Add other fields you want to update
+          verificationDocs: verificationDocs.map(file => ({
+            name: file.name,
+            size: file.size,
+            type: file.type
+          })),
+          isPaymentSetupComplete: true,
+          bankConnected,
+          mobileMoneyConnected,
+          setupStep: 'completed' // Add a field to track setup completion
+        };
+
+        const result = await updateCreatorMutation.mutateAsync({
+          creatorId,
+          ...updateData
+        });
+
+        if (result.success) {
+          setApiSuccess(true);
+          
+          // Then call the original onSubmit with the form data
+          onSubmit(formData);
+          
+          // Optional: Show success message
+          setTimeout(() => {
+            alert('Profile updated successfully! Your account is now fully set up.');
+          }, 500);
+        }
+      } else {
+        // If no creatorId, just submit normally
+        onSubmit(formData);
+      }
+    } catch (error: any) {
+      setApiError(error.message);
+      console.error('Failed to update creator profile:', error);
+    }
   };
 
-const onFormSubmit: SubmitHandler<Partial<BespokeFormData>> = (data) => {
-  if (!bankConnected && !mobileMoneyConnected) {
-    alert('Please connect at least one payment method');
-    return;
-  }
+  // Function to upload verification documents
+  const uploadVerificationDocs = async (files: File[]) => {
+    if (!creatorId || files.length === 0) return;
 
-  const connectedPaymentMethods: PaymentMethod[] = [
-  ...(bankConnected ? (['bank-transfer'] as PaymentMethod[]) : []),
-  ...(mobileMoneyConnected ? (['mobile-money'] as PaymentMethod[]) : []),
-];
+    const formData = new FormData();
+    formData.append('creatorId', creatorId);
+    files.forEach(file => {
+      formData.append('documents', file);
+    });
 
-
-  onSubmit({
-    ...data,
-    paymentMethods: connectedPaymentMethods,
-  });
-};
-
+    try {
+      const response = await api.post('/upload-verification-docs', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Failed to upload verification documents:', error);
+      throw error;
+    }
+  };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
       setVerificationDocs(prev => [...prev, ...files]);
+      
+      // Optional: Upload files immediately
+      if (creatorId) {
+        uploadVerificationDocs(files).catch(error => {
+          console.error('Upload failed:', error);
+        });
+      }
     }
   };
 
@@ -107,6 +203,17 @@ const onFormSubmit: SubmitHandler<Partial<BespokeFormData>> = (data) => {
       // Simulate successful bank connection
       setBankConnected(true);
       setConnectingBank(false);
+      
+      // Optional: Update creator profile with bank connection status
+      if (creatorId) {
+        api.put('/update-bespoke-creator', {
+          creatorId,
+          bankConnected: true,
+          bankConnectedAt: new Date().toISOString()
+        }).catch(error => {
+          console.error('Failed to update bank connection status:', error);
+        });
+      }
     }, 2000);
   };
 
@@ -114,6 +221,17 @@ const onFormSubmit: SubmitHandler<Partial<BespokeFormData>> = (data) => {
     // This would trigger Paystack mobile money popup
     setTimeout(() => {
       setMobileMoneyConnected(true);
+      
+      // Optional: Update creator profile with mobile money connection status
+      if (creatorId) {
+        api.put('/update-bespoke-creator', {
+          creatorId,
+          mobileMoneyConnected: true,
+          mobileMoneyConnectedAt: new Date().toISOString()
+        }).catch(error => {
+          console.error('Failed to update mobile money connection status:', error);
+        });
+      }
     }, 2000);
   };
 
@@ -145,6 +263,34 @@ const onFormSubmit: SubmitHandler<Partial<BespokeFormData>> = (data) => {
             </div>
           </div>
         </div>
+
+        {/* API Error Message */}
+        {apiError && (
+          <div className="rounded-lg bg-red-50 p-4 border border-red-200">
+            <div className="flex items-center">
+              <div className="h-5 w-5 text-red-400 mr-2">⚠️</div>
+              <div>
+                <h3 className="text-sm font-medium text-red-800">Update Failed</h3>
+                <p className="mt-1 text-sm text-red-700">{apiError}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* API Success Message */}
+        {apiSuccess && (
+          <div className="rounded-lg bg-green-50 p-4 border border-green-200">
+            <div className="flex items-center">
+              <Check className="h-5 w-5 text-green-400 mr-2" />
+              <div>
+                <h3 className="text-sm font-medium text-green-800">Profile Updated</h3>
+                <p className="mt-1 text-sm text-green-700">
+                  Your creator profile has been successfully updated!
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Workshop Location */}
         <div>
@@ -480,38 +626,22 @@ const onFormSubmit: SubmitHandler<Partial<BespokeFormData>> = (data) => {
         
         <button
           type="submit"
-          disabled={!isValid || isSubmitting || (!bankConnected && !mobileMoneyConnected)}
+          disabled={!isValid || isSubmitting || (!bankConnected && !mobileMoneyConnected) || updateCreatorMutation.isPending}
           className={`px-6 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors ${
-            !isValid || isSubmitting || (!bankConnected && !mobileMoneyConnected)
+            !isValid || isSubmitting || (!bankConnected && !mobileMoneyConnected) || updateCreatorMutation.isPending
               ? 'bg-gray-400 cursor-not-allowed'
               : 'bg-purple-600 hover:bg-purple-700'
           }`}
         >
-          {isSubmitting ? (
+          {isSubmitting || updateCreatorMutation.isPending ? (
             <div className="flex items-center">
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              Completing Setup...
+              {updateCreatorMutation.isPending ? 'Updating Profile...' : 'Completing Setup...'}
             </div>
           ) : (
             'Complete Registration'
           )}
         </button>
-      </div>
-
-      {/* Paystack Popup Component (Hidden) */}
-      <div className="hidden">
-        {/* <PaystackButton
-          {...paystackConfig}
-          text="Connect Bank"
-          onSuccess={(reference: any) => {
-            console.log('Payment successful:', reference);
-            setBankConnected(true);
-          }}
-          onClose={() => {
-            console.log('Payment modal closed');
-            setConnectingBank(false);
-          }}
-        /> */}
       </div>
     </form>
   );
