@@ -97,11 +97,13 @@ const BespokeLogin = () => {
 
   // Create axios instance
   const api = axios.create({
-    baseURL: `${API_BASE_URL}/api`,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
+  baseURL: `${API_BASE_URL}/api`,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  withCredentials: true, 
+});
+
 
   // Mutation for login
   const loginMutation = useMutation({

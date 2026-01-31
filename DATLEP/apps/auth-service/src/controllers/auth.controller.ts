@@ -994,71 +994,87 @@ export const updateBespokeCreator = async (
 
 
 // Login bespoke creator
-// export const loginBespokeCreator = async (
-//   req: Request,
-//   res: Response,
-//   next: NextFunction
-// ) => {
-//   try {
-//     const { email, password } = req.body;
-    
-//     if (!email || !password) {
-//       return next(new ValidationError("Email and password are required"));
-//     } 
-    
-//     // find bespoke creator
-//     const user = await BespokeCreator.findOne({ email });
-//     if (!user) {
-//       return next(new AuthenticationError("Invalid email or password"));
-//     }
-    
-//     // Verify password
-//     const isMatch = await bcrypt.compare(password, user.password!);
-//     if (!isMatch) {
-//       return next(new AuthenticationError("Invalid email or password"));
-//     }
+export const loginBespokeCreator = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email, password } = req.body;
 
-    
+    // 1️⃣ Validate input
+    if (!email || !password) {
+      return next(new ValidationError("Email and password are required"));
+    }
 
-//     // Generate access and refresh tokens 
-//     const accessToken = jwt.sign({
-//       id: creator._id,
-//       userId: user._id,
-//       email: user.email,
-//       role: 'bespoke-creator'
-//     }, process.env.ACCESS_TOKEN_SECRET!, { expiresIn: "15m" });
+    // 2️⃣ Find creator (explicitly select password)
+    const creator = await BespokeCreator.findOne({ email })
+      .select("+password");
 
-//     const refreshToken = jwt.sign({
-//       id: creator._id,
-//       userId: user._id,
-//       email: user.email,
-//       role: 'bespoke-creator'
-//     }, process.env.REFRESH_TOKEN_SECRET!, { expiresIn: "7d" });
+    if (!creator) {
+      return next(new AuthenticationError("Invalid email or password"));
+    }
 
-//     // Send tokens in response
-//     setCookie(req, res, 'bespoke_refreshToken', refreshToken);
-//     setCookie(req, res, 'bespoke_accessToken', accessToken);
-    
-//     res.status(200).json({
-//       success: true,
-//       message: "Login successful",
-//       creator: {
-//         id: creator._id,
-//         userId: user._id,
-//         name: creator.businessName || user.name,
-//         email: user.email,
-//         specialization: creator.specialization,
-//         profileCompletion: creator.profileCompletion,
-//         isVerified: creator.isVerified,
-//         verificationLevel: creator.verificationLevel
-//       },
-//       token: accessToken
-//     });
+    // 3️⃣ Check account status
+    if (!creator.isActive) {
+      return next(new AuthenticationError("Account is deactivated"));
+    }
 
-//   } catch (error) {
-//     return next(error); 
-//   }
-// };
+    // 4️⃣ Verify password
+    const isMatch = await bcrypt.compare(password, creator.password);
+    if (!isMatch) {
+      return next(new AuthenticationError("Invalid email or password"));
+    }
+
+    // 5️⃣ Update last login
+    creator.lastLogin = new Date();
+    await creator.save();
+
+    // 6️⃣ Generate tokens
+    const accessToken = jwt.sign(
+      {
+        id: creator._id,
+        role: "bespoke-creator"
+      },
+      process.env.ACCESS_TOKEN_SECRET!,
+      { expiresIn: "15m" }
+    );
+
+    const refreshToken = jwt.sign(
+      {
+        id: creator._id,
+        role: "bespoke-creator"
+      },
+      process.env.REFRESH_TOKEN_SECRET!,
+      { expiresIn: "7d" }
+    );
+
+    // 7️⃣ Set cookies (httpOnly recommended)
+    setCookie(req, res, "bespoke_accessToken", accessToken);
+    setCookie(req, res, "bespoke_refreshToken", refreshToken);
+
+    // 8️⃣ Respond
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      token: accessToken,
+      creator: {
+        id: creator._id,
+        name: creator.name,
+        email: creator.email,
+        phoneNumber: creator.phoneNumber,
+        creatorType: creator.creatorType,
+        country: creator.country,
+        city: creator.city,
+        isVerified: creator.isVerified,
+        emailVerified: creator.emailVerified
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 // Get logged in bespoke creator
 export const getLoggedInCreator = async (
