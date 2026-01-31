@@ -950,6 +950,79 @@ if (!user) {
   }
 };
 
+const ALLOWED_CREATOR_UPDATES = [
+  "businessName",
+  "tagline",
+  "bio",
+  "specialization",
+  "experience",
+  "yearsOfExperience",
+  "skills",
+  "techniques",
+  "materialsExpertise",
+  "portfolio",
+  "services",
+  "customizationOptions",
+  "pricingModel",
+  "minimumOrderValue",
+  "depositPercentage",
+  "responseTime",
+  "consultationHours",
+  "languages",
+  "workshopLocation",
+  "shippingOptions",
+  "measurementGuide",
+  "fittingOptions",
+  "paymentMethods",
+  "preferredCurrency",
+  "vacationMode"
+];
+const sanitizeUpdate = (body: any, allowed: string[]) => {
+  return Object.keys(body)
+    .filter((key) => allowed.includes(key))
+    .reduce((obj: any, key) => {
+      obj[key] = body[key];
+      return obj;
+    }, {});
+};
+
+
+// update bespoke creator
+export const updateBespokeCreator = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const updateData = sanitizeUpdate(
+      req.body,
+      ALLOWED_CREATOR_UPDATES
+    );
+
+    if (Object.keys(updateData).length === 0) {
+      return next(new ValidationError("No valid fields to update"));
+    }
+
+    const creator = await BespokeCreator.findOneAndUpdate(
+      { user: req.user.id }, // from auth middleware
+      { $set: updateData },
+      { new: true, runValidators: true }
+    );
+
+    if (!creator) {
+      return next(new ValidationError("Bespoke creator not found"));
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      creator
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Login bespoke creator
 export const loginBespokeCreator = async (
   req: Request,

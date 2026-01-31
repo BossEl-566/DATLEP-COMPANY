@@ -5,6 +5,11 @@ export interface IBespokeCreator extends Document {
   name: string;
   user: Schema.Types.ObjectId;
   email: string;
+  password: string;
+  phone: string;
+  city: string;
+  country: string;
+  
   
   // Specialization
   specialization: 'tailor' | 'shoemaker' | 'leather-worker' | 'jewelry-maker' | 'embroidery-artist' | 'knitting-expert' | 'weaving-specialist' | 'dressmaker' | 'suits-specialist' | 'wedding-attire' | 'traditional-wear' | 'children-wear' | 'costume-designer';
