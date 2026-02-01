@@ -5,7 +5,7 @@ import axiosInstance from "../utils/axiosInstance";
 // fetch user data from the API
 const fetchBespoke = async () => {
   const response = await axiosInstance.get("/api/logged-in-bespoke");
-  return response.data.user;
+  return response.data.creator;
 }
 
 export const useBespoke = () => {
