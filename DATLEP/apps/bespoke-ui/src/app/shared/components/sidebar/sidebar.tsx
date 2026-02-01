@@ -6,46 +6,56 @@ import { usePathname } from 'next/navigation'
 import useBespoke from '../../../../hooks/useBespoke'
 import { 
   LayoutDashboard, 
-  Package, 
-  ShoppingCart, 
+  Scissors,
+  Users, 
   CreditCard, 
   Calendar, 
   MessageSquare,
   Settings, 
   Bell, 
-  Tag, 
   LogOut,
   PlusCircle,
   List,
   Inbox,
-  Percent,
+  FileText,
   Store,
   Menu,
   X,
   ChevronDown,
   ChevronRight,
   BarChart3,
-  Users,
-  FileText,
+  Package,
+  Award,
+  Palette,
+  Heart,
+  Target,
+  Briefcase,
+  Sparkles,
+  Truck,
+  Shield,
+  Zap,
+  ImageDownIcon,
+  ImageDown,
 } from 'lucide-react'
 import SidebarItem from './sidebar.item'
 import { motion, AnimatePresence } from 'framer-motion'
+import Image from 'next/image'
+import logo from '../../../assets/images/datlep-logo.png' // Import your logo
 
-
-function SidebarWrapper() {
+function BespokeSidebarWrapper() {
     const {activeSidebar, setActiveSidebar} = useSidebar()
     const pathName = usePathname()
     const {bespoke} = useBespoke()
+    console.log(bespoke)
     const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
-        products: false,
-        events: false,
+        projects: false,
+        portfolio: false,
+        services: false,
         communications: false,
         extras: false
     })
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
     const [hoveredItem, setHoveredItem] = useState<string | null>(null)
-
-    console.log(bespoke)
 
     useEffect(() => {
         const pathSegments = pathName.split('/')
@@ -69,7 +79,7 @@ function SidebarWrapper() {
 
     const getItemClass = (route: string) => 
         activeSidebar === route 
-            ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg' 
+            ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg' 
             : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 hover:shadow-sm'
 
     const menuItems = [
@@ -77,76 +87,115 @@ function SidebarWrapper() {
             id: 'dashboard',
             title: 'Dashboard',
             icon: <LayoutDashboard className="w-5 h-5" />,
-            href: '/seller/dashboard'
+            href: '/bespoke/dashboard'
         },
         {
             id: 'analytics',
             title: 'Analytics',
             icon: <BarChart3 className="w-5 h-5" />,
-            href: '/dashboard/analytics'
+            href: '/bespoke/analytics'
         }
     ]
 
-    const productItems = [
+    const projectItems = [
         {
-            id: 'create-product',
-            title: 'Create Product',
+            id: 'create-project',
+            title: 'New Project',
             icon: <PlusCircle className="w-5 h-5" />,
-            href: '/dashboard/create-product'
+            href: '/bespoke/projects/create'
         },
         {
-            id: 'all-product',
-            title: 'All Products',
+            id: 'active-projects',
+            title: 'Active Projects',
+            icon: <Zap className="w-5 h-5" />,
+            href: '/bespoke/projects/active'
+        },
+        {
+            id: 'completed-projects',
+            title: 'Completed',
+            icon: <Award className="w-5 h-5" />,
+            href: '/bespoke/projects/completed'
+        },
+        {
+            id: 'all-projects',
+            title: 'All Projects',
             icon: <List className="w-5 h-5" />,
-            href: '/dashboard/all-product'
+            href: '/bespoke/projects'
+        }
+    ]
+
+    const clientItems = [
+        {
+            id: 'clients',
+            title: 'My Clients',
+            icon: <Users className="w-5 h-5" />,
+            href: '/bespoke/clients'
         },
         {
-            id: 'inventory',
-            title: 'Inventory',
-            icon: <Package className="w-5 h-5" />,
-            href: '/dashboard/inventory'
+            id: 'inquiries',
+            title: 'New Inquiries',
+            icon: <Inbox className="w-5 h-5" />,
+            href: '/bespoke/inquiries'
+        },
+        {
+            id: 'appointments',
+            title: 'Appointments',
+            icon: <Calendar className="w-5 h-5" />,
+            href: '/bespoke/appointments'
+        },
+        {
+            id: 'reviews',
+            title: 'Reviews',
+            icon: <Heart className="w-5 h-5" />,
+            href: '/bespoke/reviews'
+        }
+    ]
+
+    const portfolioItems = [
+        {
+            id: 'create-portfolio',
+            title: 'Add Work',
+            icon: <PlusCircle className="w-5 h-5" />,
+            href: '/bespoke/portfolio/create'
+        },
+        {
+            id: 'my-portfolio',
+            title: 'My Portfolio',
+            icon: <ImageDownIcon className="w-5 h-5" />,
+            href: '/bespoke/portfolio'
         },
         {
             id: 'categories',
             title: 'Categories',
-            icon: <Tag className="w-5 h-5" />,
-            href: '/dashboard/categories'
+            icon: <Briefcase className="w-5 h-5" />,
+            href: '/bespoke/portfolio/categories'
         }
     ]
 
-    const salesItems = [
+    const serviceItems = [
         {
-            id: 'orders',
-            title: 'Orders',
-            icon: <ShoppingCart className="w-5 h-5" />,
-            href: '/dashboard/orders'
+            id: 'services',
+            title: 'My Services',
+            icon: <Scissors className="w-5 h-5" />,
+            href: '/bespoke/services'
         },
         {
-            id: 'payments',
-            title: 'Payments',
+            id: 'pricing',
+            title: 'Pricing',
             icon: <CreditCard className="w-5 h-5" />,
-            href: '/dashboard/payments'
+            href: '/bespoke/pricing'
         },
         {
-            id: 'customers',
-            title: 'Customers',
-            icon: <Users className="w-5 h-5" />,
-            href: '/dashboard/customers'
-        }
-    ]
-
-    const eventItems = [
-        {
-            id: 'create-event',
-            title: 'Create Event',
-            icon: <PlusCircle className="w-5 h-5" />,
-            href: '/dashboard/events/create'
+            id: 'customization',
+            title: 'Customization',
+            icon: <Palette className="w-5 h-5" />,
+            href: '/bespoke/customization'
         },
         {
-            id: 'events',
-            title: 'All Events',
-            icon: <Calendar className="w-5 h-5" />,
-            href: '/dashboard/events'
+            id: 'materials',
+            title: 'Materials',
+            icon: <Package className="w-5 h-5" />,
+            href: '/bespoke/materials'
         }
     ]
 
@@ -155,46 +204,58 @@ function SidebarWrapper() {
             id: 'inbox',
             title: 'Inbox',
             icon: <Inbox className="w-5 h-5" />,
-            href: '/seller/inbox'
+            href: '/bespoke/inbox'
         },
         {
             id: 'messages',
             title: 'Messages',
             icon: <MessageSquare className="w-5 h-5" />,
-            href: '/seller/messages'
+            href: '/bespoke/messages'
         },
         {
             id: 'notifications',
             title: 'Notifications',
             icon: <Bell className="w-5 h-5" />,
-            href: '/seller/notifications'
+            href: '/bespoke/notifications'
         }
     ]
 
     const extraItems = [
         {
-            id: 'discount-code',
-            title: 'Discounts',
-            icon: <Tag className="w-5 h-5" />,
-            href: '/dashboard/discount-code'
+            id: 'shop',
+            title: 'My Shop',
+            icon: <Store className="w-5 h-5" />,
+            href: '/bespoke/shop'
         },
         {
-            id: 'promotions',
-            title: 'Promotions',
-            icon: <Percent className="w-5 h-5" />,
-            href: '/dashboard/promotions'
+            id: 'orders',
+            title: 'Orders',
+            icon: <Package className="w-5 h-5" />,
+            href: '/bespoke/orders'
+        },
+        {
+            id: 'payments',
+            title: 'Payments',
+            icon: <CreditCard className="w-5 h-5" />,
+            href: '/bespoke/payments'
+        },
+        {
+            id: 'shipping',
+            title: 'Shipping',
+            icon: <Truck className="w-5 h-5" />,
+            href: '/bespoke/shipping'
         },
         {
             id: 'reports',
             title: 'Reports',
             icon: <FileText className="w-5 h-5" />,
-            href: '/dashboard/reports'
+            href: '/bespoke/reports'
         },
         {
             id: 'settings',
             title: 'Settings',
             icon: <Settings className="w-5 h-5" />,
-            href: '/dashboard/settings'
+            href: '/bespoke/settings'
         }
     ]
 
@@ -205,9 +266,14 @@ function SidebarWrapper() {
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="relative">
-                            <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
-                                <Store className="w-5 h-5 text-white" />
-                            </div>
+                                {/* Replace with your logo */}
+                                <Image 
+                                    src={logo} 
+                                    alt="DATLEP Logo" 
+                                    width={24} 
+                                    height={24}
+                                    className="object-contain"
+                                />
                             {!sidebarCollapsed && (
                                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
                             )}
@@ -221,8 +287,8 @@ function SidebarWrapper() {
                                     className="overflow-hidden"
                                 >
                                     <div>
-                                        <h2 className="text-sm font-semibold text-gray-900 leading-tight">Seller Hub</h2>
-                                        <p className="text-xs text-gray-500">Professional Dashboard</p>
+                                        <h2 className="text-sm font-semibold text-gray-900 leading-tight">Creator Studio</h2>
+                                        <p className="text-xs text-gray-500">Bespoke Dashboard</p>
                                     </div>
                                 </motion.div>
                             )}
@@ -279,36 +345,36 @@ function SidebarWrapper() {
                     </div>
                 </div>
 
-                {/* Products */}
+                {/* Projects */}
                 <div className="mb-6">
                     <div 
                         className="flex items-center justify-between px-2 mb-3 cursor-pointer"
-                        onClick={() => toggleMenu('products')}
+                        onClick={() => toggleMenu('projects')}
                     >
                         <div className="flex items-center gap-2">
                             <div className="w-5 h-5 flex items-center justify-center">
-                                <Package className="w-4 h-4 text-gray-400" />
+                                <Target className="w-4 h-4 text-gray-400" />
                             </div>
                             {!sidebarCollapsed && (
                                 <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-                                    Products
+                                    Projects
                                 </p>
                             )}
                         </div>
                         {!sidebarCollapsed && (
-                            expandedMenus.products ? 
+                            expandedMenus.projects ? 
                                 <ChevronDown className="w-3 h-3 text-gray-400" /> : 
                                 <ChevronRight className="w-3 h-3 text-gray-400" />
                         )}
                     </div>
                     
-                    {(!sidebarCollapsed || expandedMenus.products) && expandedMenus.products && (
+                    {(!sidebarCollapsed || expandedMenus.projects) && expandedMenus.projects && (
                         <motion.div 
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: 'auto' }}
                             className="ml-2 border-l border-gray-200 pl-2 space-y-1"
                         >
-                            {productItems.map((item) => (
+                            {projectItems.map((item) => (
                                 <div key={item.id} className="relative">
                                     <SidebarItem
                                         icon={React.cloneElement(item.icon, { 
@@ -334,36 +400,126 @@ function SidebarWrapper() {
                     )}
                 </div>
 
-                {/* Events */}
+                {/* Portfolio */}
                 <div className="mb-6">
                     <div 
                         className="flex items-center justify-between px-2 mb-3 cursor-pointer"
-                        onClick={() => toggleMenu('events')}
+                        onClick={() => toggleMenu('portfolio')}
                     >
                         <div className="flex items-center gap-2">
                             <div className="w-5 h-5 flex items-center justify-center">
-                                <Calendar className="w-4 h-4 text-gray-400" />
+                                <ImageDown className="w-4 h-4 text-gray-400" />
                             </div>
                             {!sidebarCollapsed && (
                                 <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-                                    Events
+                                    Portfolio
                                 </p>
                             )}
                         </div>
                         {!sidebarCollapsed && (
-                            expandedMenus.events ? 
+                            expandedMenus.portfolio ? 
                                 <ChevronDown className="w-3 h-3 text-gray-400" /> : 
                                 <ChevronRight className="w-3 h-3 text-gray-400" />
                         )}
                     </div>
                     
-                    {(!sidebarCollapsed || expandedMenus.events) && expandedMenus.events && (
+                    {(!sidebarCollapsed || expandedMenus.portfolio) && expandedMenus.portfolio && (
                         <motion.div 
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: 'auto' }}
                             className="ml-2 border-l border-gray-200 pl-2 space-y-1"
                         >
-                            {eventItems.map((item) => (
+                            {portfolioItems.map((item) => (
+                                <div key={item.id} className="relative">
+                                    <SidebarItem
+                                        icon={React.cloneElement(item.icon, { 
+                                            className: `w-4 h-4 ${getIconColor(item.id)}`
+                                        })}
+                                        title={sidebarCollapsed ? '' : item.title}
+                                        isActive={activeSidebar === item.id}
+                                        href={item.href}
+                                        className={getItemClass(item.id)}
+                                        onMouseEnter={() => setHoveredItem(item.id)}
+                                        onMouseLeave={() => setHoveredItem(null)}
+                                        collapsed={sidebarCollapsed}
+                                    />
+                                    {sidebarCollapsed && hoveredItem === item.id && (
+                                        <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg z-50 whitespace-nowrap">
+                                            {item.title}
+                                            <div className="absolute left-0 top-1/2 -translate-x-1 -translate-y-1/2 w-2 h-2 bg-gray-900 rotate-45"></div>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </motion.div>
+                    )}
+                </div>
+
+                {/* Clients */}
+                <div className="mb-6">
+                    <div className="px-2 mb-3">
+                        {!sidebarCollapsed && (
+                            <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+                                Clients
+                            </p>
+                        )}
+                    </div>
+                    <div className="space-y-1">
+                        {clientItems.map((item) => (
+                            <div key={item.id} className="relative">
+                                <SidebarItem
+                                    icon={React.cloneElement(item.icon, { 
+                                        className: `w-4 h-4 ${getIconColor(item.id)}`
+                                    })}
+                                    title={sidebarCollapsed ? '' : item.title}
+                                    isActive={activeSidebar === item.id}
+                                    href={item.href}
+                                    className={getItemClass(item.id)}
+                                    onMouseEnter={() => setHoveredItem(item.id)}
+                                    onMouseLeave={() => setHoveredItem(null)}
+                                    collapsed={sidebarCollapsed}
+                                />
+                                {sidebarCollapsed && hoveredItem === item.id && (
+                                    <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg z-50 whitespace-nowrap">
+                                        {item.title}
+                                        <div className="absolute left-0 top-1/2 -translate-x-1 -translate-y-1/2 w-2 h-2 bg-gray-900 rotate-45"></div>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Services */}
+                <div className="mb-6">
+                    <div 
+                        className="flex items-center justify-between px-2 mb-3 cursor-pointer"
+                        onClick={() => toggleMenu('services')}
+                    >
+                        <div className="flex items-center gap-2">
+                            <div className="w-5 h-5 flex items-center justify-center">
+                                <Scissors className="w-4 h-4 text-gray-400" />
+                            </div>
+                            {!sidebarCollapsed && (
+                                <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+                                    Services
+                                </p>
+                            )}
+                        </div>
+                        {!sidebarCollapsed && (
+                            expandedMenus.services ? 
+                                <ChevronDown className="w-3 h-3 text-gray-400" /> : 
+                                <ChevronRight className="w-3 h-3 text-gray-400" />
+                        )}
+                    </div>
+                    
+                    {(!sidebarCollapsed || expandedMenus.services) && expandedMenus.services && (
+                        <motion.div 
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            className="ml-2 border-l border-gray-200 pl-2 space-y-1"
+                        >
+                            {serviceItems.map((item) => (
                                 <div key={item.id} className="relative">
                                     <SidebarItem
                                         icon={React.cloneElement(item.icon, { 
@@ -444,42 +600,7 @@ function SidebarWrapper() {
                     )}
                 </div>
 
-                {/* Sales */}
-                <div className="mb-6">
-                    <div className="px-2 mb-3">
-                        {!sidebarCollapsed && (
-                            <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-                                Sales
-                            </p>
-                        )}
-                    </div>
-                    <div className="space-y-1">
-                        {salesItems.map((item) => (
-                            <div key={item.id} className="relative">
-                                <SidebarItem
-                                    icon={React.cloneElement(item.icon, { 
-                                        className: `w-4 h-4 ${getIconColor(item.id)}`
-                                    })}
-                                    title={sidebarCollapsed ? '' : item.title}
-                                    isActive={activeSidebar === item.id}
-                                    href={item.href}
-                                    className={getItemClass(item.id)}
-                                    onMouseEnter={() => setHoveredItem(item.id)}
-                                    onMouseLeave={() => setHoveredItem(null)}
-                                    collapsed={sidebarCollapsed}
-                                />
-                                {sidebarCollapsed && hoveredItem === item.id && (
-                                    <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg z-50 whitespace-nowrap">
-                                        {item.title}
-                                        <div className="absolute left-0 top-1/2 -translate-x-1 -translate-y-1/2 w-2 h-2 bg-gray-900 rotate-45"></div>
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Extras */}
+                {/* Management */}
                 <div className="mb-6">
                     <div className="px-2 mb-3">
                         {!sidebarCollapsed && (
@@ -515,9 +636,44 @@ function SidebarWrapper() {
                 </div>
             </div>
 
-            {/* Bottom Section - Compact and Professional */}
+            {/* Bottom Section - Creator Info */}
             <div className="border-t border-gray-100 p-4">
-                {/* Compact Seller Info */}
+                {/* Creator Profile Summary */}
+                {bespoke && !sidebarCollapsed && (
+                    <div className="mb-4 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-100">
+                        <div className="flex items-center gap-3">
+                            <div className="relative">
+                                <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
+                                    <span className="text-sm font-bold text-white">
+                                        {bespoke.name?.charAt(0) || 'C'}
+                                    </span>
+                                </div>
+                                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
+                                    <Sparkles className="w-2 h-2 text-white" />
+                                </div>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <h3 className="text-sm font-semibold text-gray-900 truncate">
+                                    {bespoke.name || 'Creator'}
+                                </h3>
+                                <p className="text-xs text-gray-600 truncate">
+                                    {bespoke.creatorType || 'Bespoke Creator'}
+                                </p>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                        <div 
+                                            className="h-full bg-gradient-to-r from-purple-600 to-pink-600 rounded-full"
+                                            style={{ width: `${bespoke.profileCompletion || 20}%` }}
+                                        ></div>
+                                    </div>
+                                    <span className="text-xs font-medium text-purple-600">
+                                        {bespoke.profileCompletion || 20}%
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Action Buttons */}
                 <div className="flex items-center justify-between">
@@ -525,7 +681,10 @@ function SidebarWrapper() {
                         onMouseEnter={() => setHoveredItem('logout')}
                         onMouseLeave={() => setHoveredItem(null)}
                         className="flex items-center gap-2 p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors group relative"
-                        onClick={() => {/* Handle logout */}}
+                        onClick={() => {
+                            localStorage.clear();
+                            window.location.href = '/bespoke/login';
+                        }}
                     >
                         <LogOut className="w-4 h-4" />
                         {!sidebarCollapsed && (
@@ -539,23 +698,40 @@ function SidebarWrapper() {
                         )}
                     </button>
 
-                    
+                    {!sidebarCollapsed && (
+                        <button 
+                            className="p-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                            onClick={() => window.open('/bespoke/shop', '_blank')}
+                            title="View Your Shop"
+                        >
+                            <Store className="w-4 h-4" />
+                        </button>
+                    )}
                 </div>
 
-                {/* Branding - Minimal */}
+                {/* Branding */}
                 {!sidebarCollapsed && (
                     <div className="mt-4 pt-4 border-t border-gray-100">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                <div className="w-6 h-6 bg-gradient-to-r from-blue-600 to-indigo-600 rounded flex items-center justify-center">
-                                    <span className="text-xs font-bold text-white">D</span>
+                                <div className="relative w-6 h-6">
+                                    <Image 
+                                        src={logo} 
+                                        alt="DATLEP Logo" 
+                                        width={24} 
+                                        height={24}
+                                        className="object-contain"
+                                    />
                                 </div>
                                 <div>
                                     <span className="text-xs font-bold text-gray-900">DATLEP</span>
-                                    <span className="text-[10px] text-gray-400 ml-1">PRO</span>
+                                    <span className="text-[10px] text-purple-600 ml-1">CREATORS</span>
                                 </div>
                             </div>
-                            <span className="text-[10px] text-gray-400 font-mono">v2.1</span>
+                            <div className="flex items-center gap-1">
+                                <Shield className="w-3 h-3 text-green-500" />
+                                <span className="text-[10px] text-gray-400 font-mono">v2.1</span>
+                            </div>
                         </div>
                     </div>
                 )}
@@ -564,4 +740,4 @@ function SidebarWrapper() {
     )
 }
 
-export default SidebarWrapper
+export default BespokeSidebarWrapper
