@@ -7,7 +7,7 @@ function Layout({children}: {children: React.ReactNode}) {
         {/* Sidebar */}
         <aside className="h-screen sticky top-0">
             <SidebarWrapper />
-`1`        </aside>
+                  </aside>
         
         {/* Main Content */}
         <main className="flex-1 overflow-auto">
