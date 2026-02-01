@@ -173,7 +173,7 @@ const BespokeLogin = () => {
       if (response.creator.profileCompletion < 80) {
         router.push('/bespoke/complete-profile');
       } else {
-        router.push('/bespoke/dashboard');
+        router.push('/dashboard');
       }
       
     } catch (error: any) {
