@@ -18,17 +18,12 @@ import {
   ArrowRight,
   Sparkles,
   Scissors,
-  Shirt,
-  Diamond,
-  Palette,
   Award,
   Users,
   Shield,
   CreditCard,
   TrendingUp,
   Clock,
-  Smartphone,
-  User,
   ArrowLeft
 } from 'lucide-react';
 import logo from '../../assets/images/datlep-logo.png';
@@ -133,17 +128,17 @@ const BespokeLogin = () => {
   });
 
   // Mutation for refresh token (optional, for future use)
-  const refreshTokenMutation = useMutation({
-    mutationFn: async () => {
-      const refreshToken = localStorage.getItem('bespoke_refresh_token');
-      if (!refreshToken) throw new Error('No refresh token found');
+  // const refreshTokenMutation = useMutation({
+  //   mutationFn: async () => {
+  //     const refreshToken = localStorage.getItem('bespoke_refresh_token');
+  //     if (!refreshToken) throw new Error('No refresh token found');
       
-      const response = await api.post('/bespoke-refresh-token', {
-        refreshToken,
-      });
-      return response.data;
-    },
-  });
+  //     const response = await api.post('/bespoke-refresh-token', {
+  //       refreshToken,
+  //     });
+  //     return response.data;
+  //   },
+  // });
 
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   const email = loginWatch('email');
