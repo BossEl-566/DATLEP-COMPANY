@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import useSidebar from '../../../../hooks/useSidebar'
 import { usePathname } from 'next/navigation'
-import useSeller from '../../../../hooks/useBespoke'
+import useBespoke from '../../../../hooks/useBespoke'
 import { 
   LayoutDashboard, 
   Package, 
@@ -35,7 +35,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 function SidebarWrapper() {
     const {activeSidebar, setActiveSidebar} = useSidebar()
     const pathName = usePathname()
-    const {seller} = useSeller()
+    const {bespoke} = useBespoke()
     const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
         products: false,
         events: false,
@@ -45,7 +45,7 @@ function SidebarWrapper() {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
     const [hoveredItem, setHoveredItem] = useState<string | null>(null)
 
-    console.log(seller)
+    console.log(bespoke)
 
     useEffect(() => {
         const pathSegments = pathName.split('/')

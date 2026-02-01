@@ -1,8 +1,9 @@
 import express from 'express';
 import { Router } from 'express';
-import { bespokeForgotPassword, createShop, getLoggedInSeller, getUser, loginBespokeCreator, loginUser, paystackSetup, refreshBespokeToken, refreshSellerToken, refreshToken,registerSeller, resetBespokePassword, resetUserPassword, sellerLogin, sendBespokeCreatorOtp, skipPaymentSetup, updateBespokeCreator, userForgotPassword, userRegistration, verifyBespokeCreatorOtp, verifyBespokeForgotPassword, verifySeller, verifyUserForgotPassword, verifyUserOtp } from '../controllers/auth.controller';
+import { bespokeForgotPassword, createShop, getBespokeCreator, getLoggedInSeller, getUser, loginBespokeCreator, loginUser, paystackSetup, refreshBespokeToken, refreshSellerToken, refreshToken,registerSeller, resetBespokePassword, resetUserPassword, sellerLogin, sendBespokeCreatorOtp, skipPaymentSetup, updateBespokeCreator, userForgotPassword, userRegistration, verifyBespokeCreatorOtp, verifyBespokeForgotPassword, verifySeller, verifyUserForgotPassword, verifyUserOtp } from '../controllers/auth.controller';
 import isUserAuthenticated from '../../../../packages/middleware/isUserAuthenticated';
 import isSellerAuthenticated from '../../../../packages/middleware/isSellerAuthenticated';
+import isBespokeCreatorAuthenticated from '../../../../packages/middleware/isBespokeAuthenticated';
 
 
 const router: Router = express.Router();
@@ -32,6 +33,7 @@ router.post("/bespoke-refresh-token", refreshBespokeToken);
 router.post("/forgot-password-bespoke", bespokeForgotPassword);
 router.post("/verify-bespoke-forgot-password", verifyBespokeForgotPassword);
 router.post("/reset-bespoke-password", resetBespokePassword);
+router.get("/logged-in-bespoke", isBespokeCreatorAuthenticated, getBespokeCreator);
 
 
 

@@ -1222,9 +1222,30 @@ export const resetBespokePassword = async (
   }
 };
 
-
-
-
-
+// get logged in bespoke creator details
+export const getBespokeCreator = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const user = req.user; // Assume user is attached to req in isAuthenticated middleware
+    if (!user) {
+      return next(new AuthenticationError("Bespoke creator not found"));
+    }
+    
+    const creator = await BespokeCreator.findById(user._id);
+    if (!creator) {
+      return next(new AuthenticationError("Bespoke creator not found"));
+    }
+    
+    res.status(200).json({
+      success: true,
+      creator
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
 
 
