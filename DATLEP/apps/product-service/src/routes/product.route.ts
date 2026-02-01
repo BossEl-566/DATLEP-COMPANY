@@ -1,5 +1,5 @@
 import express from "express";
-import { createDiscountCodes, createProduct, deleteDiscountCode, deleteProduct, getCategory, getDiscountCodes, getShopProducts, restoreProduct } from "../controllers/product.controller";
+import { createDiscountCodes, createProduct, deleteDiscountCode, deleteProduct, getAllProducts, getCategory, getDiscountCodes, getShopProducts, restoreProduct } from "../controllers/product.controller";
 import isSellerAuthenticated from "../../../../packages/middleware/isSellerAuthenticated";
 
 
@@ -14,6 +14,7 @@ router.post("/create-product", isSellerAuthenticated, createProduct);
 router.get("/get-shop-product", isSellerAuthenticated, getShopProducts);  
 router.delete("/delete-product/:id", isSellerAuthenticated, deleteProduct);
 router.put("/restore-product/:id", isSellerAuthenticated, restoreProduct);
+router.get("/get-all-products", getAllProducts);
 
 
 export default router;
