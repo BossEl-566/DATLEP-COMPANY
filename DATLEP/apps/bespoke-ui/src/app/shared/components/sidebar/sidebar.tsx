@@ -30,7 +30,6 @@ import {
   Heart,
   Target,
   Briefcase,
-  Sparkles,
   Truck,
   Shield,
   Zap,
@@ -638,42 +637,7 @@ function BespokeSidebarWrapper() {
 
             {/* Bottom Section - Creator Info */}
             <div className="border-t border-gray-100 p-4">
-                {/* Creator Profile Summary */}
-                {bespoke && !sidebarCollapsed && (
-                    <div className="mb-4 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-100">
-                        <div className="flex items-center gap-3">
-                            <div className="relative">
-                                <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
-                                    <span className="text-sm font-bold text-white">
-                                        {bespoke.name?.charAt(0) || 'C'}
-                                    </span>
-                                </div>
-                                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
-                                    <Sparkles className="w-2 h-2 text-white" />
-                                </div>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <h3 className="text-sm font-semibold text-gray-900 truncate">
-                                    {bespoke.name || 'Creator'}
-                                </h3>
-                                <p className="text-xs text-gray-600 truncate">
-                                    {bespoke.creatorType || 'Bespoke Creator'}
-                                </p>
-                                <div className="flex items-center gap-2 mt-1">
-                                    <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                                        <div 
-                                            className="h-full bg-gradient-to-r from-purple-600 to-pink-600 rounded-full"
-                                            style={{ width: `${bespoke.profileCompletion || 20}%` }}
-                                        ></div>
-                                    </div>
-                                    <span className="text-xs font-medium text-purple-600">
-                                        {bespoke.profileCompletion || 20}%
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                
 
                 {/* Action Buttons */}
                 <div className="flex items-center justify-between">
