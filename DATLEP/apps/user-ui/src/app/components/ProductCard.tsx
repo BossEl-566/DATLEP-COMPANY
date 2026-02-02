@@ -5,9 +5,12 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Heart, Star, Eye, ShoppingBag, Share2, Clock, Store, Shield, Truck, Check } from 'lucide-react';
 import CountdownTimer from './CountdownTimer';
-import WishlistButton from './WishlistButton';
 import ProductQuickViewModal from './ProductQuickViewModal';
 import { Product, Shop, Seller } from './types';
+import { useStore } from '../../store';
+import useUser from '../../configs/hooks/useUser';
+import useLocationTracking from '../../configs/hooks/useLocationTracking';
+import useDeviceTracking from '../../configs/hooks/useDeviceTracking';
 
 interface ProductCardProps {
   product: Product;
@@ -15,8 +18,31 @@ interface ProductCardProps {
 
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const [isHovered, setIsHovered] = useState(false);
-  const [isWishlisted, setIsWishlisted] = useState(false);
   const [showQuickView, setShowQuickView] = useState(false);
+  
+  // Zustand store hooks
+  const { user } = useUser();
+  const location = useLocationTracking();
+  const locationData = useLocationTracking();
+const deviceInfo = useDeviceTracking();
+
+const locationString =
+  locationData?.city && locationData?.country
+    ? `${locationData.city}, ${locationData.country}`
+    : "Unknown";
+
+  
+  const addToWishlist = useStore((state) => state.addToWishlist);
+  const removeFromWishlist = useStore((state) => state.removeFromWishlist);
+  const addToCart = useStore((state) => state.addToCart);
+  const removeFromCart = useStore((state) => state.removeFromCart);
+  
+  const wishlist = useStore((state) => state.wishlist);
+  const isWishlisted = wishlist.some((item) => item._id === product._id);
+  
+  const cart = useStore((state) => state.cart);
+  const isInCart = cart.some((item) => item._id === product._id);
+  
 
   // Product data
   const mainImage = product.image?.url || '/placeholder-image.jpg';
@@ -52,18 +78,59 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     setShowQuickView(true);
   };
 
+  const handleToggleWishlist = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const productData = {
+      _id: product._id,
+      title: product.title,
+      image: product.image?.url || '',
+      price: salePrice > 0 ? salePrice : regularPrice,
+      shopId: shop?._id || ''
+    };
+
+    if (isWishlisted) {
+      removeFromWishlist(productData, product._id, user, location, deviceInfo);
+    } else {
+      addToWishlist(productData, user, location, deviceInfo);
+    }
+  };
+
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('Add to cart:', product.title);
-    // Add to cart logic here
+    
+    const productData = {
+      _id: product._id,
+      title: product.title,
+      image: product.image?.url || '',
+      price: salePrice > 0 ? salePrice : regularPrice,
+      shopId: shop?._id || ''
+    };
+
+    if (isInCart) {
+      removeFromCart(productData, product._id, user, location, deviceInfo);
+    } else {
+      addToCart(productData, user, location, deviceInfo);
+    }
   };
 
   const handleShare = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('Share:', product.title);
-    // Share logic here
+    
+    if (navigator.share) {
+      navigator.share({
+        title: product.title,
+        text: `Check out ${product.title} on our marketplace`,
+        url: window.location.origin + `/product/${product.slug}`,
+      });
+    } else {
+      // Fallback: Copy to clipboard
+      navigator.clipboard.writeText(window.location.origin + `/product/${product.slug}`);
+      alert('Link copied to clipboard!');
+    }
   };
 
   return (
@@ -148,11 +215,19 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             >
               <Eye className="w-5 h-5 text-gray-700" />
             </button>
-            <WishlistButton 
-              productId={product._id}
-              isWishlisted={isWishlisted}
-              onToggle={() => setIsWishlisted(!isWishlisted)}
-            />
+            
+            <button
+              onClick={handleToggleWishlist}
+              className={`p-2 rounded-full shadow-lg transition-colors ${
+                isWishlisted 
+                  ? 'bg-red-50 text-red-500 hover:bg-red-100' 
+                  : 'bg-white text-gray-700 hover:bg-gray-100'
+              }`}
+              title={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+            >
+              <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''}`} />
+            </button>
+            
             <button
               onClick={handleShare}
               className="p-2 bg-white rounded-full shadow-lg hover:bg-gray-100 transition-colors"
@@ -296,11 +371,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             className={`w-full py-2.5 px-4 rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2 ${
               stock === 0 
                 ? 'bg-gray-100 text-gray-500 cursor-not-allowed' 
+                : isInCart
+                ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:opacity-90 hover:shadow-lg'
                 : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:opacity-90 hover:shadow-lg'
             }`}
           >
             <ShoppingBag className="w-4 h-4" />
-            {stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+            {stock === 0 ? 'Out of Stock' : isInCart ? 'In Cart' : 'Add to Cart'}
           </button>
 
           {/* Quick Stats Footer */}
@@ -323,6 +400,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           product={product}
           isOpen={showQuickView}
           onClose={() => setShowQuickView(false)}
+          user={user}
+          location={location}
+          deviceInfo={deviceInfo}
         />
       )}
     </>

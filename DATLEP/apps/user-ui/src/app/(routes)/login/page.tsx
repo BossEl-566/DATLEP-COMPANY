@@ -9,7 +9,7 @@ import axios from 'axios';
 import { useMutation } from '@tanstack/react-query';
 import { Eye, EyeOff, Lock, Mail, Shield, AlertCircle, LogIn } from 'lucide-react';
 import GoogleSignIn from '../../../shared/components/google-button/index';
-import logo from '@/assets/images/datlep-logo.png';
+import logo from '../../../assets/images/datlep-logo.png';
 
 type LoginFormData = {
   email: string;
@@ -109,8 +109,8 @@ const Login = () => {
         localStorage.setItem('user', JSON.stringify(result.user));
       }
       
-      // Redirect to dashboard
-      router.push('/dashboard');
+      // Redirect to home
+      router.push('/');
       
     } catch (error: any) {
       setLoginError(error.message || 'Invalid email or password. Please try again.');

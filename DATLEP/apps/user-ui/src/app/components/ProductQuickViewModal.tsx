@@ -1,29 +1,46 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { X, Heart, Star, ShoppingBag, Share2, Truck, Shield, Store, Check, Minus, Plus } from 'lucide-react';
-import WishlistButton from './WishlistButton';
+import { X, Heart, Star, ShoppingBag, Share2, Truck, Shield, Store, Check, Minus, Plus, MapPin, Package } from 'lucide-react';
 import CountdownTimer from './CountdownTimer';
 import { Product, Shop, Seller } from './types';
+import { useStore } from '../../store';
+import useDeviceTracking from '../../configs/hooks/useDeviceTracking';
 
 interface ProductQuickViewModalProps {
   product: Product;
   isOpen: boolean;
   onClose: () => void;
+  user: any;
+  location: any;
+  deviceInfo: string;
 }
 
 const ProductQuickViewModal: React.FC<ProductQuickViewModalProps> = ({
   product,
   isOpen,
-  onClose
+  onClose,
+  user,
+  location,
+  deviceInfo
 }) => {
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [quantity, setQuantity] = useState(1);
-  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(0);
 
-  if (!isOpen) return null;
+  // Zustand store hooks
+  const addToWishlist = useStore((state) => state.addToWishlist);
+  const removeFromWishlist = useStore((state) => state.removeFromWishlist);
+  const addToCart = useStore((state) => state.addToCart);
+  const removeFromCart = useStore((state) => state.removeFromCart);
+  
+  const wishlist = useStore((state) => state.wishlist);
+  const isWishlisted = wishlist.some((item) => item._id === product._id);
+  
+  const cart = useStore((state) => state.cart);
+  const isInCart = cart.some((item) => item._id === product._id);
 
   // Product data
   const mainImage = product.image?.url || '/placeholder-image.jpg';
@@ -45,27 +62,82 @@ const ProductQuickViewModal: React.FC<ProductQuickViewModalProps> = ({
   const isShopVerified = shop?.isVerifiedShop;
   const isSellerVerified = seller?.isVerified;
 
+  // Available sizes
+  const availableSizes = product.sizes?.filter(size => size.quantity > 0) || [];
+  
   // Mock sale end date
   const saleEndDate = new Date();
   saleEndDate.setDate(saleEndDate.getDate() + 3);
 
-  // Available sizes
-  const availableSizes = product.sizes?.filter(size => size.quantity > 0) || [];
+  // Get device info
+  const deviceTrackingInfo = useDeviceTracking();
 
-  const handleAddToCart = () => {
-    console.log('Add to cart:', {
-      productId: product._id,
-      title: product.title,
-      size: selectedSize,
-      quantity,
-      price: salePrice > 0 ? salePrice : regularPrice
-    });
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
+  const handleClose = () => {
     onClose();
   };
 
+  const handleToggleWishlist = () => {
+    const productData = {
+      _id: product._id,
+      title: product.title,
+      image: product.image?.url || '',
+      price: salePrice > 0 ? salePrice : regularPrice,
+      shopId: shop?._id || ''
+    };
+
+    if (isWishlisted) {
+      removeFromWishlist(productData, product._id, user, location, deviceInfo || deviceTrackingInfo);
+    } else {
+      addToWishlist(productData, user, location, deviceInfo || deviceTrackingInfo);
+    }
+  };
+
+  const handleAddToCart = () => {
+    const productData = {
+      _id: product._id,
+      title: product.title,
+      image: product.image?.url || '',
+      price: salePrice > 0 ? salePrice : regularPrice,
+      shopId: shop?._id || '',
+      size: selectedSize || undefined,
+      quantity: quantity
+    };
+
+    if (isInCart && selectedSize) {
+      // If item is already in cart with this size, update quantity
+      addToCart(productData, user, location, deviceInfo || deviceTrackingInfo);
+    } else if (isInCart) {
+      // Remove if already in cart without size selection
+      removeFromCart(productData, product._id, user, location, deviceInfo || deviceTrackingInfo);
+    } else {
+      addToCart(productData, user, location, deviceInfo || deviceTrackingInfo);
+    }
+    
+    handleClose();
+  };
+
   const handleShare = () => {
-    console.log('Share product:', product.title);
-    // Share logic here
+    if (navigator.share) {
+      navigator.share({
+        title: product.title,
+        text: `Check out ${product.title} on our marketplace`,
+        url: window.location.origin + `/product/${product.slug}`,
+      });
+    } else {
+      navigator.clipboard.writeText(window.location.origin + `/product/${product.slug}`);
+      alert('Link copied to clipboard!');
+    }
   };
 
   const handleQuantityChange = (type: 'increase' | 'decrease') => {
@@ -80,35 +152,44 @@ const ProductQuickViewModal: React.FC<ProductQuickViewModalProps> = ({
     setSelectedSize(size);
   };
 
+  const handleImageSelect = (index: number) => {
+    setSelectedImage(index);
+  };
+
+  if (!isOpen) return null;
+
+  const displayImages = [mainImage, ...(galleryImages.map(img => img.url) || [])];
+  const currentImage = displayImages[selectedImage] || mainImage;
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
       <div 
         className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
-        onClick={onClose}
+        onClick={handleClose}
       />
       
       {/* Modal Container */}
       <div className="flex min-h-full items-center justify-center p-4">
         <div 
-          className="relative bg-white rounded-2xl shadow-2xl w-full max-w-6xl overflow-hidden"
+          className="relative bg-white rounded-2xl shadow-2xl w-full max-w-6xl overflow-hidden max-h-[90vh]"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Close Button */}
           <button
-            onClick={onClose}
-            className="absolute top-4 right-4 z-10 p-2 bg-white/80 hover:bg-white rounded-full shadow-lg transition-colors"
+            onClick={handleClose}
+            className="absolute top-4 right-4 z-20 p-2 bg-white/80 hover:bg-white rounded-full shadow-lg transition-colors"
           >
             <X className="w-5 h-5 text-gray-700" />
           </button>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2">
+          <div className="grid grid-cols-1 lg:grid-cols-2 h-full">
             {/* Left Column - Images */}
-            <div className="relative bg-gray-50">
+            <div className="relative bg-gray-50 h-[400px] lg:h-auto">
               {/* Main Image */}
-              <div className="relative h-96 lg:h-full">
+              <div className="relative w-full h-full">
                 <Image
-                  src={mainImage}
+                  src={currentImage}
                   alt={product.title}
                   fill
                   className="object-contain p-8"
@@ -131,28 +212,33 @@ const ProductQuickViewModal: React.FC<ProductQuickViewModalProps> = ({
               </div>
 
               {/* Thumbnail Gallery */}
-              {galleryImages.length > 0 && (
+              {displayImages.length > 1 && (
                 <div className="absolute bottom-4 left-4 right-4 flex gap-2 overflow-x-auto py-2">
-                  {galleryImages.slice(0, 4).map((img, index) => (
-                    <div 
-                      key={index} 
-                      className="relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden border-2 border-white shadow-md cursor-pointer hover:border-purple-500 transition-colors"
+                  {displayImages.slice(0, 5).map((img, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleImageSelect(index)}
+                      className={`relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all ${
+                        selectedImage === index
+                          ? 'border-purple-600 shadow-lg scale-105'
+                          : 'border-white hover:border-purple-400'
+                      }`}
                     >
                       <Image
-                        src={img.url || '/placeholder-image.jpg'}
+                        src={img}
                         alt={`${product.title} ${index + 1}`}
                         fill
                         className="object-cover"
                         sizes="64px"
                       />
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}
             </div>
 
             {/* Right Column - Product Info */}
-            <div className="p-6 lg:p-8 overflow-y-auto max-h-[calc(100vh-4rem)]">
+            <div className="p-6 lg:p-8 overflow-y-auto max-h-[400px] lg:max-h-[calc(90vh-2rem)]">
               {/* Shop Info */}
               {shop && (
                 <div className="flex items-center gap-3 mb-4 pb-4 border-b">
@@ -179,11 +265,11 @@ const ProductQuickViewModal: React.FC<ProductQuickViewModalProps> = ({
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 mb-1">
                       <Link 
                         href={`/shop/${shop.slug}`}
                         className="font-semibold text-gray-900 hover:text-purple-600 truncate"
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={handleClose}
                       >
                         {shop.name}
                       </Link>
@@ -199,7 +285,7 @@ const ProductQuickViewModal: React.FC<ProductQuickViewModalProps> = ({
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
                       <div className="flex items-center gap-1">
                         <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
                         <span className="font-medium">{shop.rating?.toFixed(1) || 'New'}</span>
@@ -207,7 +293,10 @@ const ProductQuickViewModal: React.FC<ProductQuickViewModalProps> = ({
                       <span>•</span>
                       <span>{shop.totalReviews || 0} reviews</span>
                       <span>•</span>
-                      <span>{shop.category || 'Fashion'}</span>
+                      <span className="flex items-center gap-1">
+                        <MapPin className="w-3 h-3" />
+                        <span>{location?.city || 'Online'} • {location?.country || 'Worldwide'}</span>
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -271,12 +360,17 @@ const ProductQuickViewModal: React.FC<ProductQuickViewModalProps> = ({
               )}
 
               {/* Stock Status */}
-              <div className={`text-sm font-medium mb-6 ${stock > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {stock > 0 ? (
-                  <span>✅ {stock} items in stock</span>
-                ) : (
-                  <span>❌ Out of stock</span>
-                )}
+              <div className="flex items-center gap-2 mb-6">
+                <div className={`text-sm font-medium ${stock > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {stock > 0 ? (
+                    <span className="flex items-center gap-1">
+                      <Package className="w-4 h-4" />
+                      {stock} items in stock
+                    </span>
+                  ) : (
+                    <span>❌ Out of stock</span>
+                  )}
+                </div>
               </div>
 
               {/* Sizes */}
@@ -294,7 +388,8 @@ const ProductQuickViewModal: React.FC<ProductQuickViewModalProps> = ({
                           selectedSize === size.size
                             ? 'border-purple-600 bg-purple-50 text-purple-700'
                             : 'border-gray-300 hover:border-purple-400 hover:bg-purple-50'
-                        }`}
+                        } ${size.quantity === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        disabled={size.quantity === 0}
                       >
                         {size.size} {size.quantity > 0 && `(${size.quantity})`}
                       </button>
@@ -340,20 +435,28 @@ const ProductQuickViewModal: React.FC<ProductQuickViewModalProps> = ({
                   className={`flex-1 py-3 px-6 rounded-lg font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${
                     stock === 0 || (availableSizes.length > 0 && !selectedSize)
                       ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                      : isInCart
+                      ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:shadow-lg hover:opacity-90'
                       : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:shadow-lg hover:opacity-90'
                   }`}
                 >
                   <ShoppingBag className="w-5 h-5" />
-                  Add to Cart
+                  {isInCart ? 'Update Cart' : 'Add to Cart'}
                 </button>
                 
                 <div className="flex gap-3">
-                  <WishlistButton 
-                    productId={product._id}
-                    isWishlisted={isWishlisted}
-                    onToggle={() => setIsWishlisted(!isWishlisted)}
-                    size="lg"
-                  />
+                  <button
+                    onClick={handleToggleWishlist}
+                    className={`p-3 rounded-lg border transition-colors flex items-center justify-center ${
+                      isWishlisted
+                        ? 'border-red-300 bg-red-50 text-red-600 hover:bg-red-100'
+                        : 'border-gray-300 hover:bg-gray-50'
+                    }`}
+                    title={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                  >
+                    <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''}`} />
+                  </button>
+                  
                   <button
                     onClick={handleShare}
                     className="p-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
@@ -382,7 +485,7 @@ const ProductQuickViewModal: React.FC<ProductQuickViewModalProps> = ({
                 <Link
                   href={`/product/${product.slug}`}
                   className="text-purple-600 hover:text-purple-800 font-medium inline-flex items-center gap-1"
-                  onClick={onClose}
+                  onClick={handleClose}
                 >
                   View full product details
                   <span>→</span>
