@@ -366,17 +366,19 @@ export const getAllProducts = async (
 
     let sort: any = { createdAt: -1 };
 
-    // 🔥 Sorting logic
     switch (type) {
       case 'popular':
         sort = { views: -1 };
         break;
+
       case 'top-rated':
         sort = { 'ratings.average': -1 };
         break;
+
       case 'featured':
         sort = { featured: -1, createdAt: -1 };
         break;
+
       case 'top10':
         sort = { orderCount: -1, views: -1 };
         limit = 10;
@@ -388,14 +390,40 @@ export const getAllProducts = async (
 
     const [products, total] = await Promise.all([
       Product.find(filter)
-        .select(
-          'title slug image gallery regularPrice salePrice ratings stock sizes featured orderCount views'
-        )
+        .select(`
+          title slug image gallery
+          regularPrice salePrice
+          ratings stock sizes
+          featured orderCount views
+          shopId
+        `)
         .populate('image', 'url')
+
+        // 🏪 Shop + Seller
+        .populate({
+          path: 'shopId',
+          select: `
+            name slug category
+            rating totalReviews
+            isVerifiedShop isFeatured
+            logo
+          `,
+          populate: {
+            path: 'seller',
+            select: `
+              name
+              averageRating
+              isVerified
+              avatar
+            `
+          }
+        })
+
         .sort(sort)
         .skip(skip)
         .limit(limit)
         .lean(),
+
       Product.countDocuments(filter)
     ]);
 
@@ -414,6 +442,7 @@ export const getAllProducts = async (
     next(err);
   }
 };
+
 
 
     

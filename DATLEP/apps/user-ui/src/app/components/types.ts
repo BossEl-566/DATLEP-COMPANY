@@ -15,6 +15,27 @@ export interface ProductSize {
   _id?: string;
 }
 
+export interface Seller {
+  _id: string;
+  name: string;
+  averageRating?: number;
+  isVerified?: boolean;
+  avatar?: string;
+}
+
+export interface Shop {
+  _id: string;
+  name: string;
+  slug: string;
+  category?: string;
+  rating?: number;
+  totalReviews?: number;
+  isVerifiedShop?: boolean;
+  isFeatured?: boolean;
+  logo?: string;
+  seller?: Seller;
+}
+
 export interface Product {
   _id: string;
   title: string;
@@ -31,6 +52,7 @@ export interface Product {
   views?: number;
   tags?: string[];
   wishlistCount?: number;
+  shopId?: Shop;
   createdAt?: string;
   updatedAt?: string;
 }
