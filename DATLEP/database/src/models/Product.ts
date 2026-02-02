@@ -103,6 +103,7 @@ export interface IProduct {
   views: number;
   favoritesCount: number;
   orderCount: number;
+  totalSold: number;
 
   sku?: string;
   barcode?: string;
@@ -258,7 +259,12 @@ const ProductSchema = new Schema<IProduct, ProductModel, ProductMethods>(
     sellerId: { type: Schema.Types.ObjectId, ref: 'Seller', required: true },
 
     featured: { type: Boolean, default: false },
-    views: { type: Number, default: 0 }
+    views: { type: Number, default: 0 },
+
+    favoritesCount: { type: Number, default: 0 },
+    orderCount: { type: Number, default: 0 },
+    totalSold: { type: Number, default: 0 }
+
   },
   { timestamps: true }
 );
