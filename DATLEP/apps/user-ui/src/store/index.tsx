@@ -6,7 +6,6 @@ type Product = {
   title: string;
   image: string;
   price: number;
-  quantity?: number;
   shopId: string;
   category?: string;
   shop?: {
@@ -24,6 +23,8 @@ type Product = {
   originalPrice?: number;
   deliveryCost?: number;
   maxQuantity?: number;
+  deliveryTime?: string;
+  quantity: number;
   
 };
 
