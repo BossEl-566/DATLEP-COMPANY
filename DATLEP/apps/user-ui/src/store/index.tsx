@@ -8,6 +8,14 @@ type Product = {
   price: number;
   quantity?: number;
   shopId: string;
+  category?: string;
+  shop?: {
+    name: string;
+    logo: string;
+    isVerified: boolean;
+    rating: number;
+  };
+  rating?: number;
 };
 
 type Store = {
