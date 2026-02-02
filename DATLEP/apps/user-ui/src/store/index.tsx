@@ -14,8 +14,17 @@ type Product = {
     logo: string;
     isVerified: boolean;
     rating: number;
+    isOnline?: boolean;
+    responseTime?: string;
   };
   rating?: number;
+  isFreeShipping?: boolean;
+  isInStock?: boolean;
+  discount?: number;
+  originalPrice?: number;
+  deliveryCost?: number;
+  maxQuantity?: number;
+  
 };
 
 type Store = {
