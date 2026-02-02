@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Search, MapPin, ChevronDown, ShoppingCart, User, Menu, X, Bell, HelpCircle, Tag, Truck, Shield, LogOut } from 'lucide-react';
+import { Search, MapPin, ChevronDown, ShoppingCart, User, Menu, X, Bell, HelpCircle, Tag, Truck, Shield, LogOut, Heart } from 'lucide-react';
 import ChartIcon from '../../assets/svgs/ChartIcon';
 import WishlistIcon from '../../assets/svgs/WishlistIcon';
 import BespokeIcon from '../../assets/svgs/BespokeIcon';
@@ -10,14 +10,24 @@ import HeaderCategories from './header-button';
 import logo from '../../assets/images/datlep-logo.png';
 import Link from 'next/link';
 import useUser from '../../configs/hooks/useUser';
+import { useStore } from '../../store';
 
 function Header() {
   const { user } = useUser();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeMode, setActiveMode] = useState<'marketplace' | 'bespoke'>('marketplace');
-  const [cartItems] = useState(3);
-  const [wishlistItems] = useState(5);
-  const [chartItems] = useState(2);
+  
+  // Get state from Zustand store
+  const { cart, wishlist, clearCart, clearWishlist } = useStore();
+  
+  // Calculate counts
+  const cartCount = cart.length;
+  const wishlistCount = wishlist.length;
+  
+  // For chart (you can replace this with actual chart state when you add it)
+  const [chartItems, setChartItems] = useState<any[]>([]);
+  const chartCount = chartItems.length;
+  
   const [currentLocation, setCurrentLocation] = useState('Lagos, Nigeria');
   const [isScrolled, setIsScrolled] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(0);
@@ -90,7 +100,7 @@ function Header() {
               </div>
               <div>
                 <h3 className="font-bold text-gray-900">
-                  {user.name.split(' ')[0] || user.email?.split('@')[0]}
+                  {user.name?.split(' ')[0] || user.email?.split('@')[0]}
                 </h3>
                 <p className="text-sm text-gray-600">{user.email}</p>
                 {user.role && (
@@ -273,6 +283,37 @@ function Header() {
             <HeaderCategories activeMode={activeMode} isCompact={true} />
           </div>
           
+          {/* Quick Stats in Mobile Menu */}
+          <div className="grid grid-cols-3 gap-3 mb-6">
+            <Link href="/compare" onClick={() => setIsMenuOpen(false)}>
+              <div className="bg-blue-50 p-3 rounded-lg text-center hover:bg-blue-100 transition">
+                <div className="flex items-center justify-center space-x-2">
+                  <ChartIcon className="w-5 h-5 text-blue-700" />
+                  <span className="font-semibold text-blue-900">Compare</span>
+                </div>
+                <div className="mt-1 text-sm text-gray-600">Products</div>
+              </div>
+            </Link>
+            <Link href="/wishlist" onClick={() => setIsMenuOpen(false)}>
+              <div className="bg-red-50 p-3 rounded-lg text-center hover:bg-red-100 transition">
+                <div className="flex items-center justify-center space-x-2">
+                  <Heart className="w-5 h-5 text-red-600" />
+                  <span className="font-semibold text-red-700">Wishlist</span>
+                </div>
+                <div className="mt-1 text-sm text-gray-600">{wishlistCount} items</div>
+              </div>
+            </Link>
+            <Link href="/cart" onClick={() => setIsMenuOpen(false)}>
+              <div className="bg-green-50 p-3 rounded-lg text-center hover:bg-green-100 transition">
+                <div className="flex items-center justify-center space-x-2">
+                  <ShoppingCart className="w-5 h-5 text-green-700" />
+                  <span className="font-semibold text-green-700">Cart</span>
+                </div>
+                <div className="mt-1 text-sm text-gray-600">{cartCount} items</div>
+              </div>
+            </Link>
+          </div>
+          
           {/* Location selection in mobile menu */}
           <div className="pt-6 border-t mt-6">
             <div className="mb-4">
@@ -334,11 +375,14 @@ function Header() {
             <Link href="/orders" className="block text-gray-700 hover:text-blue-900 font-medium py-3 px-4 hover:bg-blue-50 rounded-lg transition">
               Your Orders
             </Link>
-            <Link href="/wishlist" className="block text-gray-700 hover:text-blue-900 font-medium py-3 px-4 hover:bg-blue-50 rounded-lg transition">
-              Wishlist
-            </Link>
             <Link href="/compare" className="block text-gray-700 hover:text-blue-900 font-medium py-3 px-4 hover:bg-blue-50 rounded-lg transition">
-              Compare Items
+              Compare Products
+            </Link>
+            <Link href="/wishlist" className="block text-gray-700 hover:text-blue-900 font-medium py-3 px-4 hover:bg-blue-50 rounded-lg transition">
+              Wishlist ({wishlistCount})
+            </Link>
+            <Link href="/cart" className="block text-gray-700 hover:text-blue-900 font-medium py-3 px-4 hover:bg-blue-50 rounded-lg transition">
+              Cart ({cartCount})
             </Link>
             {user ? (
               <>
@@ -490,40 +534,46 @@ function Header() {
               </div>
             </div>
 
-            {/* Chart */}
+            {/* Compare (Chart) Icon */}
             <div className="relative group">
-              <button className="p-3 rounded-xl hover:bg-blue-50 transition relative border border-transparent hover:border-blue-100">
-                <ChartIcon className="w-7 h-7 text-blue-800" />
-                {chartItems > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center font-bold border-2 border-white">
-                    {chartItems}
-                  </span>
-                )}
-              </button>
+              <Link href="/compare">
+                <button className="p-3 rounded-xl hover:bg-blue-50 transition relative border border-transparent hover:border-blue-100">
+                  <ChartIcon className="w-7 h-7 text-blue-800" />
+                  {chartCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center font-bold border-2 border-white">
+                      {chartCount}
+                    </span>
+                  )}
+                </button>
+              </Link>
             </div>
 
             {/* Wishlist */}
             <div className="relative group hidden lg:block">
-              <button className="p-3 rounded-xl hover:bg-blue-50 transition relative border border-transparent hover:border-blue-100">
-                <WishlistIcon className="w-7 h-7 text-blue-800" />
-                {wishlistItems > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center font-bold border-2 border-white">
-                    {wishlistItems}
-                  </span>
-                )}
-              </button>
+              <Link href="/wishlist">
+                <button className="p-3 rounded-xl hover:bg-blue-50 transition relative border border-transparent hover:border-blue-100">
+                  <WishlistIcon className="w-7 h-7 text-blue-800" />
+                  {wishlistCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center font-bold border-2 border-white">
+                      {wishlistCount}
+                    </span>
+                  )}
+                </button>
+              </Link>
             </div>
 
-            {/* Cart - Updated without gradient */}
+            {/* Cart */}
             <div className="relative group">
-              <button className="p-3 rounded-xl hover:bg-blue-50 transition relative border border-transparent hover:border-blue-100">
-                <ShoppingCart className="w-7 h-7 text-blue-800" />
-                {cartItems > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-blue-900 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center font-bold border-2 border-white">
-                    {cartItems}
-                  </span>
-                )}
-              </button>
+              <Link href="/cart">
+                <button className="p-3 rounded-xl hover:bg-blue-50 transition relative border border-transparent hover:border-blue-100">
+                  <ShoppingCart className="w-7 h-7 text-blue-800" />
+                  {cartCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-blue-900 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center font-bold border-2 border-white">
+                      {cartCount}
+                    </span>
+                  )}
+                </button>
+              </Link>
             </div>
 
             {/* Account with dynamic user info */}
@@ -741,40 +791,46 @@ function Header() {
               </div>
             </div>
 
-            {/* Chart */}
+            {/* Compare (Chart) Icon */}
             <div className="relative group">
-              <button className="p-2 hover:bg-blue-50 rounded-lg transition relative">
-                <ChartIcon className="w-5 h-5 text-blue-800" />
-                {chartItems > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold">
-                    {chartItems}
-                  </span>
-                )}
-              </button>
+              <Link href="/compare">
+                <button className="p-2 hover:bg-blue-50 rounded-lg transition relative">
+                  <ChartIcon className="w-5 h-5 text-blue-800" />
+                  {chartCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold">
+                      {chartCount}
+                    </span>
+                  )}
+                </button>
+              </Link>
             </div>
 
             {/* Wishlist */}
             <div className="relative group">
-              <button className="p-2 hover:bg-blue-50 rounded-lg transition relative">
-                <WishlistIcon className="w-5 h-5 text-blue-800" />
-                {wishlistItems > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold">
-                    {wishlistItems}
-                  </span>
-                )}
-              </button>
+              <Link href="/wishlist">
+                <button className="p-2 hover:bg-blue-50 rounded-lg transition relative">
+                  <WishlistIcon className="w-5 h-5 text-blue-800" />
+                  {wishlistCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold">
+                      {wishlistCount}
+                    </span>
+                  )}
+                </button>
+              </Link>
             </div>
 
-            {/* Cart - Updated without gradient */}
+            {/* Cart */}
             <div className="relative group">
-              <button className="p-2 hover:bg-blue-50 rounded-lg transition relative">
-                <ShoppingCart className="w-5 h-5 text-blue-800" />
-                {cartItems > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-blue-900 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold">
-                    {cartItems}
-                  </span>
-                )}
-              </button>
+              <Link href="/cart">
+                <button className="p-2 hover:bg-blue-50 rounded-lg transition relative">
+                  <ShoppingCart className="w-5 h-5 text-blue-800" />
+                  {cartCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-blue-900 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold">
+                      {cartCount}
+                    </span>
+                  )}
+                </button>
+              </Link>
             </div>
 
             {/* Account - Compact with Dropdown */}
@@ -845,16 +901,32 @@ function Header() {
               <Search className="w-5 h-5 text-blue-800" />
             </button>
 
-            {/* Cart - Updated without gradient */}
+            {/* Compare (Chart) Icon */}
             <div className="relative">
-              <button className="p-2 hover:bg-blue-50 rounded-lg transition relative">
-                <ShoppingCart className="w-5 h-5 text-blue-800" />
-                {cartItems > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-blue-900 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold">
-                    {cartItems}
-                  </span>
-                )}
-              </button>
+              <Link href="/compare">
+                <button className="p-2 hover:bg-blue-50 rounded-lg transition relative">
+                  <ChartIcon className="w-5 h-5 text-blue-800" />
+                  {chartCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold">
+                      {chartCount}
+                    </span>
+                  )}
+                </button>
+              </Link>
+            </div>
+            
+            {/* Cart */}
+            <div className="relative">
+              <Link href="/cart">
+                <button className="p-2 hover:bg-blue-50 rounded-lg transition relative">
+                  <ShoppingCart className="w-5 h-5 text-blue-800" />
+                  {cartCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-blue-900 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold">
+                      {cartCount}
+                    </span>
+                  )}
+                </button>
+              </Link>
             </div>
             
             {/* Quick login button in compact mobile header */}
