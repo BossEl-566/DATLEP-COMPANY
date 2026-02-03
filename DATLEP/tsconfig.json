@@ -29,6 +29,9 @@
     },
     {
       "path": "./apps/bespoke-ui"
+    },
+    {
+      "path": "./apps/kafka-service"
     }
   ]
 }
