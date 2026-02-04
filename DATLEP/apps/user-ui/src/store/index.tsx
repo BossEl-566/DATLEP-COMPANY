@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
+import { sendKafkaEvent } from "../actions/track-user";
 
 type Product = {
   _id: string;
@@ -93,6 +94,10 @@ export const useStore = create<Store>()(
               cart: [...state.cart, { ...product, quantity: 1 }],
             };
           });
+          // send kafka event
+          if(user.id && location.id && deviceInfo) {
+            sendKafkaEvent({ userId: user.id, action: 'add_to_cart', productId: product._id, shopId: product.shopId, device: deviceInfo, country: location.country, city: location.city });
+          }
         },
 
         removeFromCart: (product, id, user, location, deviceInfo) => {
@@ -101,6 +106,10 @@ export const useStore = create<Store>()(
           set((state) => ({
             cart: state.cart.filter((item) => item._id !== id),
           }));
+          // send kafka event
+          if(user.id && location.id && deviceInfo && removeFromCart) {
+            sendKafkaEvent({ userId: user.id, action: 'remove_from_cart', productId: product._id, shopId: product.shopId, device: deviceInfo, country: location.country, city: location.city });
+          }
         },
 
         addToWishlist: (product, user, location, deviceInfo) => {
@@ -115,12 +124,20 @@ export const useStore = create<Store>()(
               wishlist: [...state.wishlist, product],
             };
           });
+          // send kafka event
+          if(user.id && location.id && deviceInfo) {
+            sendKafkaEvent({ userId: user.id, action: 'add_to_wishlist', productId: product._id, shopId: product.shopId, device: deviceInfo, country: location.country, city: location.city });
+          }
         },
 
         removeFromWishlist: (product, id, user, location, deviceInfo) => {
           set((state) => ({
             wishlist: state.wishlist.filter((item) => item._id !== id),
           }));
+          // send kafka event
+          if(user.id && location.id && deviceInfo) {
+            sendKafkaEvent({ userId: user.id, action: 'remove_from_wishlist', productId: product._id, shopId: product.shopId, device: deviceInfo, country: location.country, city: location.city });
+          } 
         },
 
         clearCart: () => set({ cart: [] }),
