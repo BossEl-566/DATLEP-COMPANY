@@ -1,4 +1,4 @@
-import {kafka} from "../../../packages/utils/kafka/index"
+import {kafka} from "../../../packages/utils/src/kafka/index"
 import { updateUserAnalytics } from "./service/analytics.service";
 
 const consumer = kafka.consumer({ groupId: 'user-events-group' });
