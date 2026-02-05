@@ -86,7 +86,7 @@ export const useStore = create<Store>()(
                   item._id === product._id
                     ? { ...item, quantity: (item.quantity ?? 1) + 1 }
                     : item
-                ),
+                ), 
               };
             } 
 
