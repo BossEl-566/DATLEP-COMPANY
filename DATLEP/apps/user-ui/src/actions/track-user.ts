@@ -16,7 +16,7 @@ export async function sendKafkaEvent(eventData: {
   try {
     await producer.connect();
     await producer.send({
-      topic: "user-events",
+      topic: "users-events",
       messages: [
         {
           value: JSON.stringify(eventData),
