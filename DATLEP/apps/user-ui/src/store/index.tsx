@@ -88,7 +88,7 @@ export const useStore = create<Store>()(
                     : item
                 ),
               };
-            }
+            } 
 
             return {
               cart: [...state.cart, { ...product, quantity: 1 }],
