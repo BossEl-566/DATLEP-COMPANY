@@ -1,6 +1,6 @@
 "use server";
 
-import { kafka } from "./kafka/index";
+import { kafka } from "../../../../packages/utils/src/kafka/index";
 
 const producer = kafka.producer();
 
