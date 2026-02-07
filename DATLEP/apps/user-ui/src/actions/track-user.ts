@@ -1,14 +1,15 @@
 "use server";
 
-import { kafka } from "../../../../packages/utils/src/kafka/index";
+import { kafka } from "@datlep/utils";
+
 
 const producer = kafka.producer();
 
 export async function sendKafkaEvent(eventData: {
   userId: string;
   action: string;
-  productId: string;
-  shopId: string;
+  productId: string; 
+  shopId: string; 
   device: string;
   country: string;
   city: string;

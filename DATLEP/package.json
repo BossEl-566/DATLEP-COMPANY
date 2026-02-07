@@ -97,6 +97,7 @@
     "api-gateway-e2e",
     "apps",
     "apps-e2e",
-    "database"
+    "database",
+    "packages/*"
   ]
 }

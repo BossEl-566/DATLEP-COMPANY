@@ -1,11 +1,10 @@
 {
-  "compilerOptions": {
-    "rootDir": "src",
-    "outDir": "dist",
-    "declaration": true,
-    "module": "ESNext",
-    "target": "ES2020",
-    "moduleResolution": "Node"
-  },
-  "include": ["src"]
+  "extends": "../tsconfig.base.json",
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "./tsconfig.lib.json"
+    }
+  ]
 }
