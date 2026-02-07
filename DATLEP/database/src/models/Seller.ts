@@ -107,7 +107,7 @@ const SellerSchema = new Schema<ISeller>(
     state: { type: String, trim: true },
     city: { type: String, trim: true },
 
-    // NO ENUMS — normalized string
+    
     sellerType: {
       type: String,
       required: true,
