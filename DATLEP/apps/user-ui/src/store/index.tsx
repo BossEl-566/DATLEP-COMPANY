@@ -94,7 +94,7 @@ export const useStore = create<Store>()(
             };
           });
           // send kafka event
-          if(user.id && location.id && deviceInfo) {
+          if (user?.id && location?.country && location?.city && deviceInfo) {
             sendKafkaEvent({ userId: user.id, action: 'add_to_cart', productId: product._id, shopId: product.shopId, device: deviceInfo, country: location.country, city: location.city });
           }
         },

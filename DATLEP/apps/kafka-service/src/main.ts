@@ -17,8 +17,7 @@ const processQueue = async () => {
       // update shop analytics
     }
 
-    const validActions = [
-      "add_to_cart", 
+    const validActions = [ 
       "add_to_cart", 
       "remove_from_cart",
       "product_view",

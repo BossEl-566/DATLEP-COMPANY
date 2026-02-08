@@ -87,7 +87,9 @@ const locationString =
       title: product.title,
       image: product.image?.url || '',
       price: salePrice > 0 ? salePrice : regularPrice,
-      shopId: shop?._id || ''
+      shopId: shop?._id || '',
+      quality: 1,
+      quantity: 1
     };
 
     if (isWishlisted) {
@@ -106,7 +108,10 @@ const locationString =
       title: product.title,
       image: product.image?.url || '',
       price: salePrice > 0 ? salePrice : regularPrice,
-      shopId: shop?._id || ''
+      shopId: shop?._id || '',
+      quality: 1,
+      quantity: 1
+
     };
 
     if (isInCart) {

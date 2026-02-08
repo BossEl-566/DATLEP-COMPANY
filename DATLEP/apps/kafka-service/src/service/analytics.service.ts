@@ -1,4 +1,5 @@
 import { ProductAnalytics, UserAnalytics } from "@datlep/database";
+import { Types } from "mongoose";
 
 export const updateUserAnalytics = async(event: any) => {
     try {
@@ -11,10 +12,12 @@ let updatedActions = exitingUser?.actions ?? [];
 
      // Aways store `product_view` for recommendations
      if (event.action === 'product_view') {
-        updatedActions.push({ productId: event.productId,
-            shopId: event.shopId,
-        action: "product_view",
-        timestamp: new Date() });
+        updatedActions.push({
+  productId: new Types.ObjectId(event.productId),
+  shopId: event.shopId ? new Types.ObjectId(event.shopId) : undefined,
+  action: event.action,
+  timestamp: new Date(),
+});
      }
      
      else if(["add_to_cart","add_to_wishlist"].includes(event.action) && !actionExists) {
@@ -57,8 +60,12 @@ let updatedActions = exitingUser?.actions ?? [];
         extraFields.device = event.device;
      }
      // Update or create user analytics
-     await UserAnalytics.updateOne({userId: event.userId,
-        lastVistedAt: new Date(),
+     await UserAnalytics.updateOne({user: event.userId,
+        $set: {
+  "engagement.lastActive": new Date(),
+  lastVisitedAt: new Date(),
+}
+,
      }, {$set: {actions: updatedActions, ...extraFields}}, {upsert: true});
 
      //Also update product analytics
