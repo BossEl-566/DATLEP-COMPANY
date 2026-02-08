@@ -2,7 +2,7 @@ import { Kafka } from "kafkajs";
 
 export const kafka = new Kafka({
     clientId: 'kafka-service',
-    brokers: ['pkc-921jm.us-east-2.aws.confluent.cloud:9092'], // ✅ must be a string
+    brokers: ['pkc-921jm.us-east-2.aws.confluent.cloud:9092'],
     ssl: true,
     sasl: {
         mechanism: 'plain',

@@ -44,7 +44,7 @@ const processQueue = async () => {
     await consumer.connect();
 
     // subscribe to topic
-    await consumer.subscribe({ topic: 'user-events', fromBeginning: false });
+    await consumer.subscribe({ topic: 'users-events', fromBeginning: false });
 
     // consume messages
     await consumer.run({
