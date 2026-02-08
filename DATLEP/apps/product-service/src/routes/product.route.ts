@@ -5,7 +5,7 @@ import isSellerAuthenticated from "../../../../packages/middleware/isSellerAuthe
 
 const router = express.Router();
 
-// router.get("/get-all-products", getAllProducts);
+router.get("/get-all-products", getAllProducts);
 router.get("/get-discount-code", isSellerAuthenticated, getDiscountCodes);
 router.get("/get-category", getCategory);
 router.post("/create-discount-code", isSellerAuthenticated, createDiscountCodes);
