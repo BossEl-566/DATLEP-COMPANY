@@ -35,7 +35,7 @@ import axiosInstance from '../../../../utils/axiosInstance';
 import Link from 'next/link';
 
 
-// product.types.ts
+
 export interface Product {
   _id: string;
   title: string;
