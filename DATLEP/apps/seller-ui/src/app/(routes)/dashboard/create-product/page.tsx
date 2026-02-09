@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import axios from 'axios';
-import { AlertCircle, Check, Percent, ArrowRight, Tag, DollarSign, Calendar, Package, Truck, Globe, Hash } from 'lucide-react';
+import { AlertCircle, Check, Percent, ArrowRight, Tag, DollarSign, Calendar, Hash } from 'lucide-react';
 import SelectImage from '../../../../shared/components/product/SelectImage';
 import SelectColors from '../../../../shared/components/product/SelectColors';
 import DetailedDescription from '../../../../shared/components/product/DetailedDescription';
@@ -112,7 +112,7 @@ export default function CreateProductPage() {
     control,
     watch,
     setValue,
-    getValues,
+    // getValues,
     formState: { errors },
   } = useForm<FormData>({
     defaultValues: {
@@ -220,8 +220,8 @@ export default function CreateProductPage() {
   const regularPrice = watch('regularPrice') || 0;
   const salePrice = watch('salePrice') || 0;
   const discountCodeValue = watch('discountCode');
-  const startingDate = watch('startingDate');
-  const endingDate = watch('endingDate');
+  // const startingDate = watch('startingDate');
+  // const endingDate = watch('endingDate');
   const imageValue = watch('image');
 
   // Update sale price when discount is applied
