@@ -105,7 +105,7 @@ export default function ProductsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const queryClient = useQueryClient();
 
-  // Fetch products
+ 
   const {
     data: products = [],
     isLoading,
@@ -123,7 +123,7 @@ export default function ProductsPage() {
     refetchOnWindowFocus: false,
   });
 
-  // Delete product mutation
+  
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       await axiosInstance.delete(`/product/api/delete-product/${id}`, {
@@ -140,7 +140,7 @@ export default function ProductsPage() {
     },
   });
 
-  // Restore product mutation
+ 
   const restoreMutation = useMutation({
     mutationFn: async (id: string) => {
       await axiosInstance.put(`/product/api/restore-product/${id}`, {}, {
@@ -157,7 +157,7 @@ export default function ProductsPage() {
     },
   });
 
-  // Define columns
+  
   const columns: ColumnDef<ProductWithImage>[] = useMemo(
     () => [
       {
@@ -408,7 +408,7 @@ export default function ProductsPage() {
     []
   );
 
-  // Filter products based on status filter
+  
   const filteredProducts = useMemo(() => {
     if (statusFilter === 'all') return products;
     return products.filter(product => {
