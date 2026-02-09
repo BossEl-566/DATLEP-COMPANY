@@ -12,8 +12,7 @@ import {
   EyeOff, 
   Lock, 
   Mail, 
-  User, 
-  Shield, 
+  User,  
   Check, 
   X, 
   AlertCircle,
@@ -23,7 +22,6 @@ import {
   Smartphone,
   ArrowLeft,
   Store,
-  Building,
   Phone,
   MapPin,
   Globe,
@@ -34,9 +32,8 @@ import {
   Truck,
   ShoppingCart,
   TrendingUp,
-  CreditCard,
   Banknote,
-  Wallet
+ 
 } from 'lucide-react';
 import { africanCountries } from '../../../utils/countries';
 import { sellerTypes, productCategories, daysOfWeek, SellerType } from '../../../utils/sellerData';
