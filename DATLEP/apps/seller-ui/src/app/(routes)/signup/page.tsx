@@ -295,7 +295,7 @@ const SellerSignup = () => {
   }, [isTimerActive, timer]);
 
   const password = watch('password');
-  const confirmPassword = watch('confirmPassword');
+  // const confirmPassword = watch('confirmPassword');
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   const phoneRegex = /^\+?[1-9]\d{1,14}$/;
 
