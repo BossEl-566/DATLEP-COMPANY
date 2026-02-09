@@ -419,7 +419,7 @@ const SellerSignup = () => {
         portfolioLink: data.portfolioLink
       };
 
-      const response = await registrationMutation.mutateAsync(registrationData);
+      // const response = await registrationMutation.mutateAsync(registrationData);
       
       setUserData(registrationData);
       setSignupStep('otp');
