@@ -38,8 +38,7 @@ import {
 import { africanCountries } from '../../../utils/countries';
 import { sellerTypes, productCategories, daysOfWeek, SellerType } from '../../../utils/sellerData';
 import logo from '@/assets/images/datlep-logo.png';
-import ConnectBank from '../../../shared/modules/connectBank'; // Import your ConnectBank component
-
+import ConnectBank from '../../../shared/modules/connectBank'; 
 const API_BASE_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:5000';
 
 // Types
