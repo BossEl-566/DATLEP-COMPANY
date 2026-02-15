@@ -104,13 +104,13 @@ const WishlistPage = () => {
 
   // Handle remove from wishlist
   const handleRemoveFromWishlist = (product: Product) => {
-    removeFromWishlist(product, product._id, user, location, deviceInfo);
+    removeFromWishlist({ ...product, quantity: product.quantity ?? 1 }, product._id, user, location, deviceInfo);
     showNotificationMessage('info', 'Removed from wishlist');
   };
 
   // Handle add to cart from wishlist
   const handleAddToCart = (product: Product) => {
-    addToCart(product, user, location, deviceInfo);
+    addToCart({ ...product, quantity: product.quantity ?? 1 }, user, location, deviceInfo);
     showNotificationMessage('success', 'Added to cart!');
   };
 
