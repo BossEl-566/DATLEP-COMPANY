@@ -30,3 +30,4 @@ export async function sendKafkaEvent(eventData: {
     await producer.disconnect();
   }
 }
+ 
