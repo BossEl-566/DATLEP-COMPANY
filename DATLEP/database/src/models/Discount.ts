@@ -59,7 +59,6 @@ const DiscountSchema = new Schema<IDiscount>(
 );
 
 // Indexes
-DiscountSchema.index({ discountCode: 1 });
 DiscountSchema.index({ sellerId: 1 });
 DiscountSchema.index({ isActive: 1 });
 
