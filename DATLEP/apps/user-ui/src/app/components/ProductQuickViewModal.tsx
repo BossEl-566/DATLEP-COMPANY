@@ -93,7 +93,8 @@ const ProductQuickViewModal: React.FC<ProductQuickViewModalProps> = ({
       title: product.title,
       image: product.image?.url || '',
       price: salePrice > 0 ? salePrice : regularPrice,
-      shopId: shop?._id || ''
+      shopId: shop?._id || '',
+      quantity: 1
     };
 
     if (isWishlisted) {

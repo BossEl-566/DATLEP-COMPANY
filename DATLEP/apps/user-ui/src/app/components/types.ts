@@ -55,4 +55,5 @@ export interface Product {
   shopId?: Shop;
   createdAt?: string;
   updatedAt?: string;
+  quantity?: number;
 }
