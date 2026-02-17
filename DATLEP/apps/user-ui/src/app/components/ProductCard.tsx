@@ -102,6 +102,15 @@ const locationString =
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    console.log("[UI] AddToCart clicked", {
+  productId: product._id,
+  isInCart,
+  user,
+  location,
+  deviceInfo,
+  shopIdFromShop: shop?._id,
+  shopIdFromProduct: product.shopId,
+});
     
     const productData = {
       _id: product._id,
@@ -137,6 +146,9 @@ const locationString =
       alert('Link copied to clipboard!');
     }
   };
+
+  
+
 
   return (
     <>

@@ -14,51 +14,68 @@ type LocationData = {
 const getStoredLocation = (): LocationData | null => {
   if (typeof window === "undefined") return null;
 
-  const storedData = localStorage.getItem(LOCATION_STORAGE_KEY);
-  if (!storedData) return null;
+  const raw = localStorage.getItem(LOCATION_STORAGE_KEY);
+  if (!raw) return null;
 
-  const parsedData: LocationData = JSON.parse(storedData);
-  const expiryTime =
-    LOCATION_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
+  try {
+    const parsed = JSON.parse(raw) as Partial<LocationData>;
 
-  const isExpired = Date.now() - parsedData.timestamp > expiryTime;
+    // ✅ if corrupted/partial, delete it
+    if (!parsed.country || !parsed.city || !parsed.timestamp) {
+      localStorage.removeItem(LOCATION_STORAGE_KEY);
+      return null;
+    }
 
-  return isExpired ? null : parsedData;
+    const expiryMs = LOCATION_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
+    const expired = Date.now() - parsed.timestamp > expiryMs;
+
+    if (expired) {
+      localStorage.removeItem(LOCATION_STORAGE_KEY);
+      return null;
+    }
+
+    return parsed as LocationData;
+  } catch {
+    localStorage.removeItem(LOCATION_STORAGE_KEY);
+    return null;
+  }
 };
 
-const useLocationTracking = () => {
+export default function useLocationTracking() {
   const [location, setLocation] = useState<LocationData | null>(null);
 
   useEffect(() => {
-    const storedLocation = getStoredLocation();
+    const stored = getStoredLocation();
+    console.log("[LOC] storedLocation", stored);
 
-    if (storedLocation) {
-      setLocation(storedLocation);
+    if (stored) {
+      setLocation(stored);
       return;
     }
 
-    fetch("https://ip-api.com/json")
-      .then((res) => res.json())
+    console.log("[LOC] calling /api/geo/ip ...");
+
+    fetch("/api/geo/ip", { cache: "no-store" })
+      .then((r) => r.json())
       .then((data) => {
-        const newLocation: LocationData = {
+        console.log("[LOC] /api/geo/ip response", data);
+
+        if (!data?.ok) throw new Error(data?.error || "geo api failed");
+
+        const next: LocationData = {
           country: data.country,
           city: data.city,
           timestamp: Date.now(),
         };
 
-        localStorage.setItem(
-          LOCATION_STORAGE_KEY,
-          JSON.stringify(newLocation)
-        );
-
-        setLocation(newLocation);
+        localStorage.setItem(LOCATION_STORAGE_KEY, JSON.stringify(next));
+        console.log("[LOC] saved", next);
+        setLocation(next);
       })
-      .catch((error) => {
-        console.error("Location fetch failed:", error);
+      .catch((err) => {
+        console.error("[LOC] Location fetch failed:", err);
       });
   }, []);
 
   return location;
-};
-
-export default useLocationTracking;
+}
