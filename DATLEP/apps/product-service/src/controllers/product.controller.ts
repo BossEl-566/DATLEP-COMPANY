@@ -443,9 +443,17 @@ export const getAllProducts = async (
   }
 };
 
-
-
-    
-
-
- 
+// get product details by slug
+export const getProductDetails = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { slug } = req.params;
+    const product = await Product.findOne({ slug, status: 'active', isDeleted: false });
+    res.json({ product });
+  } catch (err) {
+    next(err);
+  }
+}
