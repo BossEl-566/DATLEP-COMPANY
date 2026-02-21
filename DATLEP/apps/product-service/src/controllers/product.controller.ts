@@ -451,9 +451,21 @@ export const getProductDetails = async (
 ) => {
   try {
     const { slug } = req.params;
-    const product = await Product.findOne({ slug, status: 'active', isDeleted: false });
-    res.json({ product });
-  } catch (err) {
-    next(err);
+
+    const product = await Product.findOne({
+      slug,
+      status: 'active',
+      isDeleted: false
+    });
+
+    if (!product) {
+       res.status(404).json({
+        message: 'Product not found'
+      });
+    }
+
+    res.status(200).json({ product });
+  } catch (error) {
+   next(error);
   }
-}
+};
