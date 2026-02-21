@@ -1,4 +1,4 @@
-import { Discount, Image, Product, Seller, SiteConfigModel } from "@datlep/database";
+import { Discount,  Product,  SiteConfigModel } from "@datlep/database";
 import { Request, Response, NextFunction } from "express";
 import { SellerRequest } from '../types/express';
 import { createImage } from "../services/image.service";
@@ -451,21 +451,75 @@ export const getProductDetails = async (
 ) => {
   try {
     const { slug } = req.params;
+    const now = new Date();
 
     const product = await Product.findOne({
       slug,
       status: 'active',
-      isDeleted: false
-    });
+      isDeleted: false,
+      $or: [
+        { startingDate: { $exists: false } },
+        {
+          startingDate: { $lte: now },
+          endingDate: { $gte: now }
+        }
+      ]
+    })
+      .populate('image') // product main image
+      .populate('gallery') // product gallery images
+
+      // Full shop + nested seller (sanitized)
+      .populate({
+        path: 'shopId',
+        populate: [
+          // Shop media refs
+          { path: 'avatar' },
+          { path: 'coverBanner' },
+          { path: 'logo' },
+          { path: 'gallery' },
+
+          // Shop seller (exclude sensitive/private fields)
+          {
+            path: 'seller',
+            select: `
+              -password
+              -verificationDocuments
+              -paymentDetails
+              -stripeAccountId
+              -paystackCustomerCode
+              -flutterwaveMerchantId
+              -deactivationReason
+            `,
+            populate: [{ path: 'avatar' }]
+          }
+        ]
+      })
+
+      // Optional: top-level sellerId on Product (also sanitized)
+      .populate({
+        path: 'sellerId',
+        select: `
+          -password
+          -verificationDocuments
+          -paymentDetails
+          -stripeAccountId
+          -paystackCustomerCode
+          -flutterwaveMerchantId
+          -deactivationReason
+        `,
+        populate: [{ path: 'avatar' }]
+      })
+
+      .lean();
 
     if (!product) {
-       res.status(404).json({
+      res.status(404).json({
         message: 'Product not found'
       });
     }
 
     res.status(200).json({ product });
   } catch (error) {
-   next(error);
+    next(error);
   }
 };
