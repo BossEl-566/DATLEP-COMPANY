@@ -1607,429 +1607,429 @@ export const getFilteredShops = async (
 };
 
 // search products (production-ready, weighted relevance)
- export const searchProducts = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
- ) => {
-  try {
-    const {
-      q = '',
-      category,
-      brand,
-      shopId,
-      sellerId,
-      inStock,
-      minPrice,
-      maxPrice,
-      page = '1',
-      limit = '20',
-      sortBy = 'relevance' // relevance | newest | popular | price-asc | price-desc | top-rated
-    } = req.query;
+  export const searchProducts = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const {
+        q = '',
+        category,
+        brand,
+        shopId,
+        sellerId,
+        inStock,
+        minPrice,
+        maxPrice,
+        page = '1',
+        limit = '20',
+        sortBy = 'relevance' // relevance | newest | popular | price-asc | price-desc | top-rated
+      } = req.query;
 
-    const MAX_LIMIT = 50;
+      const MAX_LIMIT = 50;
 
-    const toBool = (value: unknown): boolean | undefined => {
-      if (value === undefined || value === null || value === '') return undefined;
-      const v = String(value).toLowerCase();
-      if (['true', '1', 'yes'].includes(v)) return true;
-      if (['false', '0', 'no'].includes(v)) return false;
-      return undefined;
-    };
+      const toBool = (value: unknown): boolean | undefined => {
+        if (value === undefined || value === null || value === '') return undefined;
+        const v = String(value).toLowerCase();
+        if (['true', '1', 'yes'].includes(v)) return true;
+        if (['false', '0', 'no'].includes(v)) return false;
+        return undefined;
+      };
 
-    const toNumber = (value: unknown, fallback?: number): number | undefined => {
-      if (value === undefined || value === null || value === '') return fallback;
-      const n = Number(value);
-      return Number.isFinite(n) ? n : fallback;
-    };
+      const toNumber = (value: unknown, fallback?: number): number | undefined => {
+        if (value === undefined || value === null || value === '') return fallback;
+        const n = Number(value);
+        return Number.isFinite(n) ? n : fallback;
+      };
 
-    const escapeRegex = (str: string) =>
-      str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const escapeRegex = (str: string) =>
+        str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-    const parsedPage = Math.max(1, toNumber(page, 1) || 1);
-    const parsedLimit = Math.min(MAX_LIMIT, Math.max(1, toNumber(limit, 20) || 20));
-    const skip = (parsedPage - 1) * parsedLimit;
+      const parsedPage = Math.max(1, toNumber(page, 1) || 1);
+      const parsedLimit = Math.min(MAX_LIMIT, Math.max(1, toNumber(limit, 20) || 20));
+      const skip = (parsedPage - 1) * parsedLimit;
 
-    const parsedInStock = toBool(inStock);
-    const parsedMinPrice = Math.max(0, toNumber(minPrice, 0) || 0);
-    const parsedMaxPrice = Math.max(parsedMinPrice, toNumber(maxPrice, 10_000_000) || 10_000_000);
+      const parsedInStock = toBool(inStock);
+      const parsedMinPrice = Math.max(0, toNumber(minPrice, 0) || 0);
+      const parsedMaxPrice = Math.max(parsedMinPrice, toNumber(maxPrice, 10_000_000) || 10_000_000);
 
-    const queryTerm = String(q || '').trim();
-    const now = new Date();
+      const queryTerm = String(q || '').trim();
+      const now = new Date();
 
-    // -----------------------------
-    // Base match (public/active products)
-    // -----------------------------
-    const baseMatch: Record<string, any> = {
-      status: 'active',
-      isDeleted: false,
-      $or: [
-        { startingDate: { $exists: false } },
-        {
-          startingDate: { $lte: now },
-          endingDate: { $gte: now }
-        }
-      ]
-    };
-
-    if (category && String(category).trim()) {
-      baseMatch.category = String(category).trim();
-    }
-
-    if (brand && String(brand).trim()) {
-      baseMatch.brand = String(brand).trim();
-    }
-
-    if (shopId && mongoose.Types.ObjectId.isValid(String(shopId))) {
-      baseMatch.shopId = new mongoose.Types.ObjectId(String(shopId));
-    }
-
-    if (sellerId && mongoose.Types.ObjectId.isValid(String(sellerId))) {
-      baseMatch.sellerId = new mongoose.Types.ObjectId(String(sellerId));
-    }
-
-    if (parsedInStock === true) {
-      baseMatch.stock = { $gt: 0 };
-    } else if (parsedInStock === false) {
-      baseMatch.stock = { $lte: 0 };
-    }
-
-    // effective price filter (salePrice if valid else regularPrice)
-    const effectivePriceExpr = {
-      $cond: [
-        {
-          $and: [
-            { $ne: ['$salePrice', null] },
-            { $gt: ['$salePrice', 0] }
-          ]
-        },
-        '$salePrice',
-        '$regularPrice'
-      ]
-    };
-
-    // If q exists, pre-filter to only likely matches for performance
-    const escaped = queryTerm ? escapeRegex(queryTerm) : '';
-    const containsRegex = queryTerm ? new RegExp(escaped, 'i') : null;
-
-    if (queryTerm && containsRegex) {
-      baseMatch.$and = [
-        ...(baseMatch.$and || []),
-        {
-          $or: [
-            { title: containsRegex },
-            { slug: containsRegex },
-            { brand: containsRegex },
-            { category: containsRegex },
-            { tags: { $in: [containsRegex] } },
-            { shortDescription: containsRegex },
-            { detailedDescription: containsRegex }
-          ]
-        }
-      ];
-    }
-
-    // -----------------------------
-    // Aggregation pipeline
-    // -----------------------------
-    const pipeline: any[] = [
-      { $match: baseMatch },
-
-      // Compute effective price first
-      {
-        $addFields: {
-          effectivePrice: effectivePriceExpr
-        }
-      },
-
-      // Apply price range on effective price
-      {
-        $match: {
-          effectivePrice: {
-            $gte: parsedMinPrice,
-            $lte: parsedMaxPrice
+      // -----------------------------
+      // Base match (public/active products)
+      // -----------------------------
+      const baseMatch: Record<string, any> = {
+        status: 'active',
+        isDeleted: false,
+        $or: [
+          { startingDate: { $exists: false } },
+          {
+            startingDate: { $lte: now },
+            endingDate: { $gte: now }
           }
-        }
+        ]
+      };
+
+      if (category && String(category).trim()) {
+        baseMatch.category = String(category).trim();
       }
-    ];
 
-    // Relevance scoring only when q exists
-    if (queryTerm) {
-      const exactRegex = new RegExp(`^${escaped}$`, 'i');
-      const startsRegex = new RegExp(`^${escaped}`, 'i');
-      const wordBoundaryRegex = new RegExp(`\\b${escaped}`, 'i');
+      if (brand && String(brand).trim()) {
+        baseMatch.brand = String(brand).trim();
+      }
 
-      pipeline.push(
+      if (shopId && mongoose.Types.ObjectId.isValid(String(shopId))) {
+        baseMatch.shopId = new mongoose.Types.ObjectId(String(shopId));
+      }
+
+      if (sellerId && mongoose.Types.ObjectId.isValid(String(sellerId))) {
+        baseMatch.sellerId = new mongoose.Types.ObjectId(String(sellerId));
+      }
+
+      if (parsedInStock === true) {
+        baseMatch.stock = { $gt: 0 };
+      } else if (parsedInStock === false) {
+        baseMatch.stock = { $lte: 0 };
+      }
+
+      // effective price filter (salePrice if valid else regularPrice)
+      const effectivePriceExpr = {
+        $cond: [
+          {
+            $and: [
+              { $ne: ['$salePrice', null] },
+              { $gt: ['$salePrice', 0] }
+            ]
+          },
+          '$salePrice',
+          '$regularPrice'
+        ]
+      };
+
+      // If q exists, pre-filter to only likely matches for performance
+      const escaped = queryTerm ? escapeRegex(queryTerm) : '';
+      const containsRegex = queryTerm ? new RegExp(escaped, 'i') : null;
+
+      if (queryTerm && containsRegex) {
+        baseMatch.$and = [
+          ...(baseMatch.$and || []),
+          {
+            $or: [
+              { title: containsRegex },
+              { slug: containsRegex },
+              { brand: containsRegex },
+              { category: containsRegex },
+              { tags: { $in: [containsRegex] } },
+              { shortDescription: containsRegex },
+              { detailedDescription: containsRegex }
+            ]
+          }
+        ];
+      }
+
+      // -----------------------------
+      // Aggregation pipeline
+      // -----------------------------
+      const pipeline: any[] = [
+        { $match: baseMatch },
+
+        // Compute effective price first
         {
           $addFields: {
-            _score: {
-              $add: [
-                // title boosts (highest priority)
-                { $cond: [{ $regexMatch: { input: { $ifNull: ['$title', ''] }, regex: exactRegex } }, 120, 0] },
-                { $cond: [{ $regexMatch: { input: { $ifNull: ['$title', ''] }, regex: startsRegex } }, 80, 0] },
-                { $cond: [{ $regexMatch: { input: { $ifNull: ['$title', ''] }, regex: wordBoundaryRegex } }, 50, 0] },
-                { $cond: [{ $regexMatch: { input: { $ifNull: ['$title', ''] }, regex: containsRegex! } }, 25, 0] },
+            effectivePrice: effectivePriceExpr
+          }
+        },
 
-                // slug boosts
-                { $cond: [{ $regexMatch: { input: { $ifNull: ['$slug', ''] }, regex: exactRegex } }, 50, 0] },
-                { $cond: [{ $regexMatch: { input: { $ifNull: ['$slug', ''] }, regex: startsRegex } }, 30, 0] },
+        // Apply price range on effective price
+        {
+          $match: {
+            effectivePrice: {
+              $gte: parsedMinPrice,
+              $lte: parsedMaxPrice
+            }
+          }
+        }
+      ];
 
-                // brand/category boosts
-                { $cond: [{ $regexMatch: { input: { $ifNull: ['$brand', ''] }, regex: containsRegex! } }, 20, 0] },
-                { $cond: [{ $regexMatch: { input: { $ifNull: ['$category', ''] }, regex: containsRegex! } }, 12, 0] },
+      // Relevance scoring only when q exists
+      if (queryTerm) {
+        const exactRegex = new RegExp(`^${escaped}$`, 'i');
+        const startsRegex = new RegExp(`^${escaped}`, 'i');
+        const wordBoundaryRegex = new RegExp(`\\b${escaped}`, 'i');
 
-                // descriptions
-                { $cond: [{ $regexMatch: { input: { $ifNull: ['$shortDescription', ''] }, regex: containsRegex! } }, 10, 0] },
-                { $cond: [{ $regexMatch: { input: { $ifNull: ['$detailedDescription', ''] }, regex: containsRegex! } }, 4, 0] },
+        pipeline.push(
+          {
+            $addFields: {
+              _score: {
+                $add: [
+                  // title boosts (highest priority)
+                  { $cond: [{ $regexMatch: { input: { $ifNull: ['$title', ''] }, regex: exactRegex } }, 120, 0] },
+                  { $cond: [{ $regexMatch: { input: { $ifNull: ['$title', ''] }, regex: startsRegex } }, 80, 0] },
+                  { $cond: [{ $regexMatch: { input: { $ifNull: ['$title', ''] }, regex: wordBoundaryRegex } }, 50, 0] },
+                  { $cond: [{ $regexMatch: { input: { $ifNull: ['$title', ''] }, regex: containsRegex! } }, 25, 0] },
 
-                // tags array match
-                {
-                  $cond: [
-                    {
-                      $gt: [
-                        {
-                          $size: {
-                            $filter: {
-                              input: { $ifNull: ['$tags', []] },
-                              as: 'tag',
-                              cond: {
-                                $regexMatch: {
-                                  input: { $ifNull: ['$$tag', ''] },
-                                  regex: containsRegex!
+                  // slug boosts
+                  { $cond: [{ $regexMatch: { input: { $ifNull: ['$slug', ''] }, regex: exactRegex } }, 50, 0] },
+                  { $cond: [{ $regexMatch: { input: { $ifNull: ['$slug', ''] }, regex: startsRegex } }, 30, 0] },
+
+                  // brand/category boosts
+                  { $cond: [{ $regexMatch: { input: { $ifNull: ['$brand', ''] }, regex: containsRegex! } }, 20, 0] },
+                  { $cond: [{ $regexMatch: { input: { $ifNull: ['$category', ''] }, regex: containsRegex! } }, 12, 0] },
+
+                  // descriptions
+                  { $cond: [{ $regexMatch: { input: { $ifNull: ['$shortDescription', ''] }, regex: containsRegex! } }, 10, 0] },
+                  { $cond: [{ $regexMatch: { input: { $ifNull: ['$detailedDescription', ''] }, regex: containsRegex! } }, 4, 0] },
+
+                  // tags array match
+                  {
+                    $cond: [
+                      {
+                        $gt: [
+                          {
+                            $size: {
+                              $filter: {
+                                input: { $ifNull: ['$tags', []] },
+                                as: 'tag',
+                                cond: {
+                                  $regexMatch: {
+                                    input: { $ifNull: ['$$tag', ''] },
+                                    regex: containsRegex!
+                                  }
                                 }
                               }
                             }
-                          }
-                        },
-                        0
-                      ]
-                    },
-                    18,
-                    0
-                  ]
-                },
+                          },
+                          0
+                        ]
+                      },
+                      18,
+                      0
+                    ]
+                  },
 
-                // business boosts to break ties
-                { $cond: [{ $gt: [{ $ifNull: ['$stock', 0] }, 0] }, 3, 0] },
-                { $cond: [{ $eq: [{ $ifNull: ['$featured', false] }, true] }, 5, 0] },
-                { $min: [{ $floor: { $divide: [{ $ifNull: ['$views', 0] }, 100] } }, 10] },
-                { $min: [{ $floor: { $divide: [{ $ifNull: ['$orderCount', 0] }, 20] } }, 10] }
-              ]
+                  // business boosts to break ties
+                  { $cond: [{ $gt: [{ $ifNull: ['$stock', 0] }, 0] }, 3, 0] },
+                  { $cond: [{ $eq: [{ $ifNull: ['$featured', false] }, true] }, 5, 0] },
+                  { $min: [{ $floor: { $divide: [{ $ifNull: ['$views', 0] }, 100] } }, 10] },
+                  { $min: [{ $floor: { $divide: [{ $ifNull: ['$orderCount', 0] }, 20] } }, 10] }
+                ]
+              }
             }
+          }
+        );
+
+        // Ensure matches actually scored > 0 (safety)
+        pipeline.push({
+          $match: { _score: { $gt: 0 } }
+        });
+      } else {
+        pipeline.push({
+          $addFields: { _score: 0 }
+        });
+      }
+
+      // Sort strategy
+      let sortStage: Record<string, 1 | -1> = { createdAt: -1 };
+
+      switch (String(sortBy)) {
+        case 'newest':
+          sortStage = { createdAt: -1 };
+          break;
+        case 'oldest':
+          sortStage = { createdAt: 1 };
+          break;
+        case 'popular':
+          sortStage = { views: -1, orderCount: -1, createdAt: -1 };
+          break;
+        case 'top-rated':
+          sortStage = { 'ratings.average': -1, 'ratings.count': -1, createdAt: -1 };
+          break;
+        case 'price-asc':
+          sortStage = { effectivePrice: 1, createdAt: -1 };
+          break;
+        case 'price-desc':
+          sortStage = { effectivePrice: -1, createdAt: -1 };
+          break;
+        case 'relevance':
+        default:
+          sortStage = queryTerm
+            ? { _score: -1, featured: -1, views: -1, orderCount: -1, createdAt: -1 }
+            : { createdAt: -1 };
+          break;
+      }
+
+      pipeline.push({ $sort: sortStage });
+
+      // Join minimal related docs (fast enough, frontend-friendly)
+      pipeline.push(
+        // image
+        {
+          $lookup: {
+            from: 'images',
+            localField: 'image',
+            foreignField: '_id',
+            as: 'image'
+          }
+        },
+        {
+          $unwind: {
+            path: '$image',
+            preserveNullAndEmptyArrays: true
+          }
+        },
+
+        // gallery images
+        {
+          $lookup: {
+            from: 'images',
+            localField: 'gallery',
+            foreignField: '_id',
+            as: 'gallery'
+          }
+        },
+
+        // shop
+        {
+          $lookup: {
+            from: 'shops',
+            localField: 'shopId',
+            foreignField: '_id',
+            as: 'shopId'
+          }
+        },
+        {
+          $unwind: {
+            path: '$shopId',
+            preserveNullAndEmptyArrays: true
+          }
+        },
+
+        // shop logo
+        {
+          $lookup: {
+            from: 'images',
+            localField: 'shopId.logo',
+            foreignField: '_id',
+            as: '_shopLogo'
+          }
+        },
+        {
+          $addFields: {
+            'shopId.logo': { $arrayElemAt: ['$_shopLogo', 0] }
+          }
+        },
+
+        // seller (top-level sellerId)
+        {
+          $lookup: {
+            from: 'sellers',
+            localField: 'sellerId',
+            foreignField: '_id',
+            as: 'sellerId'
+          }
+        },
+        {
+          $unwind: {
+            path: '$sellerId',
+            preserveNullAndEmptyArrays: true
+          }
+        },
+
+        // seller avatar
+        {
+          $lookup: {
+            from: 'images',
+            localField: 'sellerId.avatar',
+            foreignField: '_id',
+            as: '_sellerAvatar'
+          }
+        },
+        {
+          $addFields: {
+            'sellerId.avatar': { $arrayElemAt: ['$_sellerAvatar', 0] }
           }
         }
       );
 
-      // Ensure matches actually scored > 0 (safety)
+      // Remove sensitive seller fields
       pipeline.push({
-        $match: { _score: { $gt: 0 } }
+        $project: {
+          _shopLogo: 0,
+          _sellerAvatar: 0,
+
+          'sellerId.password': 0,
+          'sellerId.verificationDocuments': 0,
+          'sellerId.paymentDetails': 0,
+          'sellerId.stripeAccountId': 0,
+          'sellerId.paystackCustomerCode': 0,
+          'sellerId.flutterwaveMerchantId': 0,
+          'sellerId.deactivationReason': 0
+        }
       });
-    } else {
+
+      // Pagination + total in one roundtrip
       pipeline.push({
-        $addFields: { _score: 0 }
+        $facet: {
+          data: [{ $skip: skip }, { $limit: parsedLimit }],
+          meta: [{ $count: 'total' }]
+        }
       });
+
+      const result = await Product.aggregate(pipeline);
+      const agg = result[0] || { data: [], meta: [] };
+      const products = agg.data || [];
+      const total = agg.meta?.[0]?.total || 0;
+
+      // Suggestions (page-level lightweight)
+      const titleSuggestions = new Set<string>();
+      const brandSuggestions = new Set<string>();
+      const tagSuggestions = new Set<string>();
+
+      for (const p of products) {
+        if (p.title) titleSuggestions.add(p.title);
+        if (p.brand) brandSuggestions.add(p.brand);
+        if (Array.isArray(p.tags)) {
+          for (const t of p.tags) {
+            if (typeof t === 'string' && t.trim()) tagSuggestions.add(t.trim());
+            if (tagSuggestions.size >= 10) break;
+          }
+        }
+      }
+
+    res.status(200).json({
+        success: true,
+        query: queryTerm,
+        data: products,
+        pagination: {
+          page: parsedPage,
+          limit: parsedLimit,
+          total,
+          totalPages: Math.ceil(total / parsedLimit),
+          hasNextPage: parsedPage * parsedLimit < total,
+          hasPrevPage: parsedPage > 1
+        },
+        sort: String(sortBy),
+        appliedFilters: {
+          category: category ? String(category) : undefined,
+          brand: brand ? String(brand) : undefined,
+          shopId: shopId ? String(shopId) : undefined,
+          sellerId: sellerId ? String(sellerId) : undefined,
+          inStock: parsedInStock,
+          minPrice: parsedMinPrice,
+          maxPrice: parsedMaxPrice
+        },
+        suggestions: {
+          titles: Array.from(titleSuggestions).slice(0, 8),
+          brands: Array.from(brandSuggestions).slice(0, 8),
+          tags: Array.from(tagSuggestions).slice(0, 10)
+        }
+      });
+    } catch (error) {
+      next(error);
     }
-
-    // Sort strategy
-    let sortStage: Record<string, 1 | -1> = { createdAt: -1 };
-
-    switch (String(sortBy)) {
-      case 'newest':
-        sortStage = { createdAt: -1 };
-        break;
-      case 'oldest':
-        sortStage = { createdAt: 1 };
-        break;
-      case 'popular':
-        sortStage = { views: -1, orderCount: -1, createdAt: -1 };
-        break;
-      case 'top-rated':
-        sortStage = { 'ratings.average': -1, 'ratings.count': -1, createdAt: -1 };
-        break;
-      case 'price-asc':
-        sortStage = { effectivePrice: 1, createdAt: -1 };
-        break;
-      case 'price-desc':
-        sortStage = { effectivePrice: -1, createdAt: -1 };
-        break;
-      case 'relevance':
-      default:
-        sortStage = queryTerm
-          ? { _score: -1, featured: -1, views: -1, orderCount: -1, createdAt: -1 }
-          : { createdAt: -1 };
-        break;
-    }
-
-    pipeline.push({ $sort: sortStage });
-
-    // Join minimal related docs (fast enough, frontend-friendly)
-    pipeline.push(
-      // image
-      {
-        $lookup: {
-          from: 'images',
-          localField: 'image',
-          foreignField: '_id',
-          as: 'image'
-        }
-      },
-      {
-        $unwind: {
-          path: '$image',
-          preserveNullAndEmptyArrays: true
-        }
-      },
-
-      // gallery images
-      {
-        $lookup: {
-          from: 'images',
-          localField: 'gallery',
-          foreignField: '_id',
-          as: 'gallery'
-        }
-      },
-
-      // shop
-      {
-        $lookup: {
-          from: 'shops',
-          localField: 'shopId',
-          foreignField: '_id',
-          as: 'shopId'
-        }
-      },
-      {
-        $unwind: {
-          path: '$shopId',
-          preserveNullAndEmptyArrays: true
-        }
-      },
-
-      // shop logo
-      {
-        $lookup: {
-          from: 'images',
-          localField: 'shopId.logo',
-          foreignField: '_id',
-          as: '_shopLogo'
-        }
-      },
-      {
-        $addFields: {
-          'shopId.logo': { $arrayElemAt: ['$_shopLogo', 0] }
-        }
-      },
-
-      // seller (top-level sellerId)
-      {
-        $lookup: {
-          from: 'sellers',
-          localField: 'sellerId',
-          foreignField: '_id',
-          as: 'sellerId'
-        }
-      },
-      {
-        $unwind: {
-          path: '$sellerId',
-          preserveNullAndEmptyArrays: true
-        }
-      },
-
-      // seller avatar
-      {
-        $lookup: {
-          from: 'images',
-          localField: 'sellerId.avatar',
-          foreignField: '_id',
-          as: '_sellerAvatar'
-        }
-      },
-      {
-        $addFields: {
-          'sellerId.avatar': { $arrayElemAt: ['$_sellerAvatar', 0] }
-        }
-      }
-    );
-
-    // Remove sensitive seller fields
-    pipeline.push({
-      $project: {
-        _shopLogo: 0,
-        _sellerAvatar: 0,
-
-        'sellerId.password': 0,
-        'sellerId.verificationDocuments': 0,
-        'sellerId.paymentDetails': 0,
-        'sellerId.stripeAccountId': 0,
-        'sellerId.paystackCustomerCode': 0,
-        'sellerId.flutterwaveMerchantId': 0,
-        'sellerId.deactivationReason': 0
-      }
-    });
-
-    // Pagination + total in one roundtrip
-    pipeline.push({
-      $facet: {
-        data: [{ $skip: skip }, { $limit: parsedLimit }],
-        meta: [{ $count: 'total' }]
-      }
-    });
-
-    const result = await Product.aggregate(pipeline);
-    const agg = result[0] || { data: [], meta: [] };
-    const products = agg.data || [];
-    const total = agg.meta?.[0]?.total || 0;
-
-    // Suggestions (page-level lightweight)
-    const titleSuggestions = new Set<string>();
-    const brandSuggestions = new Set<string>();
-    const tagSuggestions = new Set<string>();
-
-    for (const p of products) {
-      if (p.title) titleSuggestions.add(p.title);
-      if (p.brand) brandSuggestions.add(p.brand);
-      if (Array.isArray(p.tags)) {
-        for (const t of p.tags) {
-          if (typeof t === 'string' && t.trim()) tagSuggestions.add(t.trim());
-          if (tagSuggestions.size >= 10) break;
-        }
-      }
-    }
-
-   res.status(200).json({
-      success: true,
-      query: queryTerm,
-      data: products,
-      pagination: {
-        page: parsedPage,
-        limit: parsedLimit,
-        total,
-        totalPages: Math.ceil(total / parsedLimit),
-        hasNextPage: parsedPage * parsedLimit < total,
-        hasPrevPage: parsedPage > 1
-      },
-      sort: String(sortBy),
-      appliedFilters: {
-        category: category ? String(category) : undefined,
-        brand: brand ? String(brand) : undefined,
-        shopId: shopId ? String(shopId) : undefined,
-        sellerId: sellerId ? String(sellerId) : undefined,
-        inStock: parsedInStock,
-        minPrice: parsedMinPrice,
-        maxPrice: parsedMaxPrice
-      },
-      suggestions: {
-        titles: Array.from(titleSuggestions).slice(0, 8),
-        brands: Array.from(brandSuggestions).slice(0, 8),
-        tags: Array.from(tagSuggestions).slice(0, 10)
-      }
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+  };
 
 // Top Shops
 export const getTopShops = async (
