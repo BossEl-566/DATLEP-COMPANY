@@ -1,4 +1,4 @@
-import { Discount,  Product,  SiteConfigModel } from "@datlep/database";
+import { Discount,  Product,  SiteConfigModel, Shop } from "@datlep/database";
 import { Request, Response, NextFunction } from "express";
 import { SellerRequest } from '../types/express';
 import { createImage } from "../services/image.service";
@@ -1272,6 +1272,332 @@ export const getFilteredEvents = async (
           validOnPage: validCount,
           expiredOnPage: expiredCount,
           noExpiryOnPage: noExpiryCount
+        }
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// get filtered shops
+export const getFilteredShops = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const {
+      // search
+      q,
+
+      // filters
+      categories,
+      shopType,
+      country,
+      city,
+      specialties,
+      yearsInBusiness,
+
+      // flags
+      isVerifiedShop,
+      isFeatured,
+      isActive,
+      isOpen,
+
+      // numeric
+      minRating,
+      minReviews,
+
+      // pagination & sort
+      page = '1',
+      limit = '20',
+      sortBy = 'newest'
+    } = req.query;
+
+    // -----------------------------
+    // Helpers
+    // -----------------------------
+    const MAX_LIMIT = 100;
+
+    const toArray = (value: unknown): string[] => {
+      if (!value) return [];
+      if (Array.isArray(value)) {
+        return value
+          .flatMap((v) => String(v).split(','))
+          .map((v) => v.trim())
+          .filter(Boolean);
+      }
+      return String(value)
+        .split(',')
+        .map((v) => v.trim())
+        .filter(Boolean);
+    };
+
+    const toBool = (value: unknown): boolean | undefined => {
+      if (value === undefined || value === null || value === '') return undefined;
+      const v = String(value).toLowerCase();
+      if (['true', '1', 'yes'].includes(v)) return true;
+      if (['false', '0', 'no'].includes(v)) return false;
+      return undefined;
+    };
+
+    const toNumber = (value: unknown, fallback?: number): number | undefined => {
+      if (value === undefined || value === null || value === '') return fallback;
+      const n = Number(value);
+      return Number.isFinite(n) ? n : fallback;
+    };
+
+    const escapeRegex = (str: string) =>
+      str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    // -----------------------------
+    // Parse query params
+    // -----------------------------
+    const parsedPage = Math.max(1, toNumber(page, 1) || 1);
+    const parsedLimit = Math.min(MAX_LIMIT, Math.max(1, toNumber(limit, 20) || 20));
+    const skip = (parsedPage - 1) * parsedLimit;
+
+    const parsedCategories = toArray(categories);
+    const parsedShopTypes = toArray(shopType); // supports single or comma list
+    const parsedSpecialties = toArray(specialties);
+    const parsedYears = toArray(yearsInBusiness);
+
+    const parsedCountry = country ? String(country).trim() : undefined;
+    const parsedCity = city ? String(city).trim() : undefined;
+
+    const parsedIsVerified = toBool(isVerifiedShop);
+    const parsedIsFeatured = toBool(isFeatured);
+    const parsedIsActive = toBool(isActive);
+    const parsedIsOpen = toBool(isOpen);
+
+    const parsedMinRating = Math.max(0, Math.min(5, toNumber(minRating, 0) || 0));
+    const parsedMinReviews = Math.max(0, toNumber(minReviews, 0) || 0);
+
+    // -----------------------------
+    // Build filter
+    // -----------------------------
+    const filter: Record<string, any> = {};
+
+    // sensible public defaults unless explicitly overridden
+    filter.isActive = parsedIsActive !== undefined ? parsedIsActive : true;
+
+    if (parsedIsVerified !== undefined) {
+      filter.isVerifiedShop = parsedIsVerified;
+    }
+
+    if (parsedIsFeatured !== undefined) {
+      filter.isFeatured = parsedIsFeatured;
+    }
+
+    if (parsedIsOpen !== undefined) {
+      filter.isOpen = parsedIsOpen;
+    }
+
+    if (parsedCategories.length > 0) {
+      filter.category = { $in: parsedCategories };
+    }
+
+    if (parsedShopTypes.length > 0) {
+      filter.shopType = { $in: parsedShopTypes };
+    }
+
+    if (parsedYears.length > 0) {
+      filter.yearsInBusiness = { $in: parsedYears };
+    }
+
+    if (parsedCountry) {
+      filter['address.country'] = new RegExp(`^${escapeRegex(parsedCountry)}$`, 'i');
+    }
+
+    if (parsedCity) {
+      filter['address.city'] = new RegExp(`^${escapeRegex(parsedCity)}$`, 'i');
+    }
+
+    if (parsedMinRating > 0) {
+      filter.rating = { $gte: parsedMinRating };
+    }
+
+    if (parsedMinReviews > 0) {
+      filter.totalReviews = { $gte: parsedMinReviews };
+    }
+
+    if (parsedSpecialties.length > 0) {
+      filter.specialties = { $in: parsedSpecialties };
+    }
+
+    // Search across key shop fields
+    if (q && String(q).trim()) {
+      const term = String(q).trim();
+      const rx = new RegExp(escapeRegex(term), 'i');
+
+      filter.$and = filter.$and || [];
+      filter.$and.push({
+        $or: [
+          { name: rx },
+          { slug: rx },
+          { bio: rx },
+          { category: rx },
+          { specialties: { $in: [rx] } },
+          { 'address.city': rx },
+          { 'address.country': rx },
+          { website: rx },
+          { businessRegistration: rx }
+        ]
+      });
+    }
+
+    // -----------------------------
+    // Sorting
+    // -----------------------------
+    let sort: Record<string, 1 | -1> = { createdAt: -1 };
+
+    switch (String(sortBy)) {
+      case 'newest':
+        sort = { createdAt: -1 };
+        break;
+      case 'oldest':
+        sort = { createdAt: 1 };
+        break;
+      case 'top-rated':
+        sort = { rating: -1, totalReviews: -1, createdAt: -1 };
+        break;
+      case 'most-reviewed':
+        sort = { totalReviews: -1, rating: -1, createdAt: -1 };
+        break;
+      case 'featured':
+        sort = { isFeatured: -1, isVerifiedShop: -1, rating: -1, createdAt: -1 };
+        break;
+      case 'verified':
+        sort = { isVerifiedShop: -1, rating: -1, createdAt: -1 };
+        break;
+      case 'open-now':
+        sort = { isOpen: -1, rating: -1, createdAt: -1 };
+        break;
+      case 'name-asc':
+        sort = { name: 1 };
+        break;
+      case 'name-desc':
+        sort = { name: -1 };
+        break;
+      default:
+        sort = { createdAt: -1 };
+    }
+
+    // -----------------------------
+    // Query execution
+    // -----------------------------
+    const [shops, total] = await Promise.all([
+      Shop.find(filter)
+        .populate('avatar')
+        .populate('coverBanner')
+        .populate('logo')
+        .populate('gallery')
+        .populate({
+          path: 'seller',
+          select: `
+            -password
+            -verificationDocuments
+            -paymentDetails
+            -stripeAccountId
+            -paystackCustomerCode
+            -flutterwaveMerchantId
+            -deactivationReason
+          `,
+          populate: [{ path: 'avatar' }]
+        })
+        .sort(sort)
+        .skip(skip)
+        .limit(parsedLimit)
+        .lean(),
+
+      Shop.countDocuments(filter)
+    ]);
+
+    // -----------------------------
+    // Lightweight facets (current page)
+    // -----------------------------
+    const categoryCounts = new Map<string, number>();
+    const countryCounts = new Map<string, number>();
+    const cityCounts = new Map<string, number>();
+    const shopTypeCounts = new Map<string, number>();
+
+    let verifiedCount = 0;
+    let featuredCount = 0;
+    let openCount = 0;
+
+    for (const shop of shops as any[]) {
+      if (shop.category) {
+        categoryCounts.set(shop.category, (categoryCounts.get(shop.category) || 0) + 1);
+      }
+
+      if (shop.shopType) {
+        shopTypeCounts.set(shop.shopType, (shopTypeCounts.get(shop.shopType) || 0) + 1);
+      }
+
+      const countryValue = shop?.address?.country;
+      if (countryValue) {
+        countryCounts.set(countryValue, (countryCounts.get(countryValue) || 0) + 1);
+      }
+
+      const cityValue = shop?.address?.city;
+      if (cityValue) {
+        cityCounts.set(cityValue, (cityCounts.get(cityValue) || 0) + 1);
+      }
+
+      if (shop.isVerifiedShop) verifiedCount++;
+      if (shop.isFeatured) featuredCount++;
+      if (shop.isOpen) openCount++;
+    }
+
+     res.status(200).json({
+      success: true,
+      data: shops,
+      pagination: {
+        page: parsedPage,
+        limit: parsedLimit,
+        total,
+        totalPages: Math.ceil(total / parsedLimit),
+        hasNextPage: parsedPage * parsedLimit < total,
+        hasPrevPage: parsedPage > 1
+      },
+      sort: String(sortBy),
+      appliedFilters: {
+        q: q ? String(q) : undefined,
+        categories: parsedCategories,
+        shopType: parsedShopTypes,
+        country: parsedCountry,
+        city: parsedCity,
+        specialties: parsedSpecialties,
+        yearsInBusiness: parsedYears,
+        isVerifiedShop: parsedIsVerified,
+        isFeatured: parsedIsFeatured,
+        isActive: filter.isActive,
+        isOpen: parsedIsOpen,
+        minRating: parsedMinRating,
+        minReviews: parsedMinReviews
+      },
+      facets: {
+        categories: Array.from(categoryCounts.entries()).map(([value, count]) => ({
+          value,
+          count
+        })),
+        shopTypes: Array.from(shopTypeCounts.entries()).map(([value, count]) => ({
+          value,
+          count
+        })),
+        countries: Array.from(countryCounts.entries()).map(([value, count]) => ({
+          value,
+          count
+        })),
+        cities: Array.from(cityCounts.entries()).map(([value, count]) => ({
+          value,
+          count
+        })),
+        statusSummary: {
+          verifiedOnPage: verifiedCount,
+          featuredOnPage: featuredCount,
+          openOnPage: openCount
         }
       }
     });
