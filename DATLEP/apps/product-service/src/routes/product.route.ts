@@ -1,5 +1,5 @@
 import express from "express";
-import { createDiscountCodes, createProduct, deleteDiscountCode, deleteProduct, getAllProducts, getCategory, getDiscountCodes, getProductDetails, getShopProducts, restoreProduct } from "../controllers/product.controller";
+import { createDiscountCodes, createProduct, deleteDiscountCode, deleteProduct, getAllProducts, getCategory, getDiscountCodes, getFeaturedProducts, getFilteredOffers, getFilteredProducts, getFilteredShops, getHomepageFeed, getNewArrivals, getProductDetails, getProductsByShopSlug, getShopProducts, getTopShops, getTrendingProducts, restoreProduct, searchProducts } from "../controllers/product.controller";
 import isSellerAuthenticated from "../../../../packages/middleware/isSellerAuthenticated";
 
 
@@ -16,6 +16,18 @@ router.get("/get-shop-product", isSellerAuthenticated, getShopProducts);
 router.delete("/delete-product/:id", isSellerAuthenticated, deleteProduct);
 router.put("/restore-product/:id", isSellerAuthenticated, restoreProduct);
 router.get("/get-product/:slug", getProductDetails);
+router.get("/get-filtered-products", getFilteredProducts); 
+router.get("/get-filtered-offers", getFilteredOffers); 
+router.get("/get-filtered-shops", getFilteredShops);
+router.get("/search-products", searchProducts); 
+router.get("/top-shops", getTopShops);
+router.get("/shops/:slug", getProductsByShopSlug);
+
+router.get("/featured-products", getFeaturedProducts);
+router.get("/trending-products", getTrendingProducts);
+router.get("/new-arrivals", getNewArrivals);
+
+router.get("/homepage-feed", getHomepageFeed);
 
 
 

@@ -962,7 +962,7 @@ export const getFilteredProducts = async (
 // get filtered offers (Discounts)
 // NOTE: function name kept as getFilteredEvents to match your existing route usage.
 // Recommended rename: getFilteredDiscounts or getFilteredOffers
-export const getFilteredEvents = async (
+export const getFilteredOffers = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -1606,12 +1606,12 @@ export const getFilteredShops = async (
   }
 };
 
-// search products
-export const searchProducts = async (
+// search products (production-ready, weighted relevance)
+ export const searchProducts = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+ ) => {
   try {
     const {
       q = '',
@@ -1620,9 +1620,11 @@ export const searchProducts = async (
       shopId,
       sellerId,
       inStock,
+      minPrice,
+      maxPrice,
       page = '1',
       limit = '20',
-      sortBy = 'relevance'
+      sortBy = 'relevance' // relevance | newest | popular | price-asc | price-desc | top-rated
     } = req.query;
 
     const MAX_LIMIT = 50;
@@ -1635,16 +1637,30 @@ export const searchProducts = async (
       return undefined;
     };
 
+    const toNumber = (value: unknown, fallback?: number): number | undefined => {
+      if (value === undefined || value === null || value === '') return fallback;
+      const n = Number(value);
+      return Number.isFinite(n) ? n : fallback;
+    };
+
     const escapeRegex = (str: string) =>
       str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-    const parsedPage = Math.max(1, Number(page) || 1);
-    const parsedLimit = Math.min(MAX_LIMIT, Math.max(1, Number(limit) || 20));
+    const parsedPage = Math.max(1, toNumber(page, 1) || 1);
+    const parsedLimit = Math.min(MAX_LIMIT, Math.max(1, toNumber(limit, 20) || 20));
     const skip = (parsedPage - 1) * parsedLimit;
-    const parsedInStock = toBool(inStock);
 
+    const parsedInStock = toBool(inStock);
+    const parsedMinPrice = Math.max(0, toNumber(minPrice, 0) || 0);
+    const parsedMaxPrice = Math.max(parsedMinPrice, toNumber(maxPrice, 10_000_000) || 10_000_000);
+
+    const queryTerm = String(q || '').trim();
     const now = new Date();
-    const filter: Record<string, any> = {
+
+    // -----------------------------
+    // Base match (public/active products)
+    // -----------------------------
+    const baseMatch: Record<string, any> = {
       status: 'active',
       isDeleted: false,
       $or: [
@@ -1656,130 +1672,322 @@ export const searchProducts = async (
       ]
     };
 
-    // optional exact-ish filters
     if (category && String(category).trim()) {
-      filter.category = String(category).trim();
+      baseMatch.category = String(category).trim();
     }
 
     if (brand && String(brand).trim()) {
-      filter.brand = String(brand).trim();
+      baseMatch.brand = String(brand).trim();
     }
 
     if (shopId && mongoose.Types.ObjectId.isValid(String(shopId))) {
-      filter.shopId = new mongoose.Types.ObjectId(String(shopId));
+      baseMatch.shopId = new mongoose.Types.ObjectId(String(shopId));
     }
 
     if (sellerId && mongoose.Types.ObjectId.isValid(String(sellerId))) {
-      filter.sellerId = new mongoose.Types.ObjectId(String(sellerId));
+      baseMatch.sellerId = new mongoose.Types.ObjectId(String(sellerId));
     }
 
     if (parsedInStock === true) {
-      filter.stock = { $gt: 0 };
+      baseMatch.stock = { $gt: 0 };
     } else if (parsedInStock === false) {
-      filter.stock = { $lte: 0 };
+      baseMatch.stock = { $lte: 0 };
     }
 
-    // search query
-    const queryTerm = String(q).trim();
+    // effective price filter (salePrice if valid else regularPrice)
+    const effectivePriceExpr = {
+      $cond: [
+        {
+          $and: [
+            { $ne: ['$salePrice', null] },
+            { $gt: ['$salePrice', 0] }
+          ]
+        },
+        '$salePrice',
+        '$regularPrice'
+      ]
+    };
 
+    // If q exists, pre-filter to only likely matches for performance
+    const escaped = queryTerm ? escapeRegex(queryTerm) : '';
+    const containsRegex = queryTerm ? new RegExp(escaped, 'i') : null;
+
+    if (queryTerm && containsRegex) {
+      baseMatch.$and = [
+        ...(baseMatch.$and || []),
+        {
+          $or: [
+            { title: containsRegex },
+            { slug: containsRegex },
+            { brand: containsRegex },
+            { category: containsRegex },
+            { tags: { $in: [containsRegex] } },
+            { shortDescription: containsRegex },
+            { detailedDescription: containsRegex }
+          ]
+        }
+      ];
+    }
+
+    // -----------------------------
+    // Aggregation pipeline
+    // -----------------------------
+    const pipeline: any[] = [
+      { $match: baseMatch },
+
+      // Compute effective price first
+      {
+        $addFields: {
+          effectivePrice: effectivePriceExpr
+        }
+      },
+
+      // Apply price range on effective price
+      {
+        $match: {
+          effectivePrice: {
+            $gte: parsedMinPrice,
+            $lte: parsedMaxPrice
+          }
+        }
+      }
+    ];
+
+    // Relevance scoring only when q exists
     if (queryTerm) {
-      const rx = new RegExp(escapeRegex(queryTerm), 'i');
+      const exactRegex = new RegExp(`^${escaped}$`, 'i');
+      const startsRegex = new RegExp(`^${escaped}`, 'i');
+      const wordBoundaryRegex = new RegExp(`\\b${escaped}`, 'i');
 
-      filter.$and = filter.$and || [];
-      filter.$and.push({
-        $or: [
-          { title: rx },
-          { slug: rx },
-          { brand: rx },
-          { category: rx },
-          { tags: { $in: [rx] } },
-          { shortDescription: rx },
-          { detailedDescription: rx }
-        ]
+      pipeline.push(
+        {
+          $addFields: {
+            _score: {
+              $add: [
+                // title boosts (highest priority)
+                { $cond: [{ $regexMatch: { input: { $ifNull: ['$title', ''] }, regex: exactRegex } }, 120, 0] },
+                { $cond: [{ $regexMatch: { input: { $ifNull: ['$title', ''] }, regex: startsRegex } }, 80, 0] },
+                { $cond: [{ $regexMatch: { input: { $ifNull: ['$title', ''] }, regex: wordBoundaryRegex } }, 50, 0] },
+                { $cond: [{ $regexMatch: { input: { $ifNull: ['$title', ''] }, regex: containsRegex! } }, 25, 0] },
+
+                // slug boosts
+                { $cond: [{ $regexMatch: { input: { $ifNull: ['$slug', ''] }, regex: exactRegex } }, 50, 0] },
+                { $cond: [{ $regexMatch: { input: { $ifNull: ['$slug', ''] }, regex: startsRegex } }, 30, 0] },
+
+                // brand/category boosts
+                { $cond: [{ $regexMatch: { input: { $ifNull: ['$brand', ''] }, regex: containsRegex! } }, 20, 0] },
+                { $cond: [{ $regexMatch: { input: { $ifNull: ['$category', ''] }, regex: containsRegex! } }, 12, 0] },
+
+                // descriptions
+                { $cond: [{ $regexMatch: { input: { $ifNull: ['$shortDescription', ''] }, regex: containsRegex! } }, 10, 0] },
+                { $cond: [{ $regexMatch: { input: { $ifNull: ['$detailedDescription', ''] }, regex: containsRegex! } }, 4, 0] },
+
+                // tags array match
+                {
+                  $cond: [
+                    {
+                      $gt: [
+                        {
+                          $size: {
+                            $filter: {
+                              input: { $ifNull: ['$tags', []] },
+                              as: 'tag',
+                              cond: {
+                                $regexMatch: {
+                                  input: { $ifNull: ['$$tag', ''] },
+                                  regex: containsRegex!
+                                }
+                              }
+                            }
+                          }
+                        },
+                        0
+                      ]
+                    },
+                    18,
+                    0
+                  ]
+                },
+
+                // business boosts to break ties
+                { $cond: [{ $gt: [{ $ifNull: ['$stock', 0] }, 0] }, 3, 0] },
+                { $cond: [{ $eq: [{ $ifNull: ['$featured', false] }, true] }, 5, 0] },
+                { $min: [{ $floor: { $divide: [{ $ifNull: ['$views', 0] }, 100] } }, 10] },
+                { $min: [{ $floor: { $divide: [{ $ifNull: ['$orderCount', 0] }, 20] } }, 10] }
+              ]
+            }
+          }
+        }
+      );
+
+      // Ensure matches actually scored > 0 (safety)
+      pipeline.push({
+        $match: { _score: { $gt: 0 } }
+      });
+    } else {
+      pipeline.push({
+        $addFields: { _score: 0 }
       });
     }
 
-    // sorting
-    let sort: Record<string, 1 | -1> = { createdAt: -1 };
+    // Sort strategy
+    let sortStage: Record<string, 1 | -1> = { createdAt: -1 };
 
     switch (String(sortBy)) {
       case 'newest':
-        sort = { createdAt: -1 };
+        sortStage = { createdAt: -1 };
         break;
       case 'oldest':
-        sort = { createdAt: 1 };
-        break;
-      case 'price-asc':
-        sort = { salePrice: 1, regularPrice: 1, createdAt: -1 };
-        break;
-      case 'price-desc':
-        sort = { salePrice: -1, regularPrice: -1, createdAt: -1 };
+        sortStage = { createdAt: 1 };
         break;
       case 'popular':
-        sort = { views: -1, orderCount: -1, createdAt: -1 };
+        sortStage = { views: -1, orderCount: -1, createdAt: -1 };
         break;
       case 'top-rated':
-        sort = { 'ratings.average': -1, 'ratings.count': -1, createdAt: -1 };
+        sortStage = { 'ratings.average': -1, 'ratings.count': -1, createdAt: -1 };
+        break;
+      case 'price-asc':
+        sortStage = { effectivePrice: 1, createdAt: -1 };
+        break;
+      case 'price-desc':
+        sortStage = { effectivePrice: -1, createdAt: -1 };
         break;
       case 'relevance':
       default:
-        // for regex search we don't have text score here, so use popularity + recency
-        sort = queryTerm
-          ? { views: -1, orderCount: -1, createdAt: -1 }
+        sortStage = queryTerm
+          ? { _score: -1, featured: -1, views: -1, orderCount: -1, createdAt: -1 }
           : { createdAt: -1 };
         break;
     }
 
-    const [products, total] = await Promise.all([
-      Product.find(filter)
-        .populate('image', 'url fileId')
-        .populate('gallery', 'url fileId')
-        .populate({
-          path: 'shopId',
-          populate: [
-            { path: 'logo' },
-            {
-              path: 'seller',
-              select: `
-                -password
-                -verificationDocuments
-                -paymentDetails
-                -stripeAccountId
-                -paystackCustomerCode
-                -flutterwaveMerchantId
-                -deactivationReason
-              `,
-              populate: [{ path: 'avatar' }]
-            }
-          ]
-        })
-        .populate({
-          path: 'sellerId',
-          select: `
-            -password
-            -verificationDocuments
-            -paymentDetails
-            -stripeAccountId
-            -paystackCustomerCode
-            -flutterwaveMerchantId
-            -deactivationReason
-          `,
-          populate: [{ path: 'avatar' }, { path: 'shop' }]
-        })
-        .sort(sort)
-        .skip(skip)
-        .limit(parsedLimit)
-        .lean(),
+    pipeline.push({ $sort: sortStage });
 
-      Product.countDocuments(filter)
-    ]);
+    // Join minimal related docs (fast enough, frontend-friendly)
+    pipeline.push(
+      // image
+      {
+        $lookup: {
+          from: 'images',
+          localField: 'image',
+          foreignField: '_id',
+          as: 'image'
+        }
+      },
+      {
+        $unwind: {
+          path: '$image',
+          preserveNullAndEmptyArrays: true
+        }
+      },
 
-    // lightweight suggestions from returned page
+      // gallery images
+      {
+        $lookup: {
+          from: 'images',
+          localField: 'gallery',
+          foreignField: '_id',
+          as: 'gallery'
+        }
+      },
+
+      // shop
+      {
+        $lookup: {
+          from: 'shops',
+          localField: 'shopId',
+          foreignField: '_id',
+          as: 'shopId'
+        }
+      },
+      {
+        $unwind: {
+          path: '$shopId',
+          preserveNullAndEmptyArrays: true
+        }
+      },
+
+      // shop logo
+      {
+        $lookup: {
+          from: 'images',
+          localField: 'shopId.logo',
+          foreignField: '_id',
+          as: '_shopLogo'
+        }
+      },
+      {
+        $addFields: {
+          'shopId.logo': { $arrayElemAt: ['$_shopLogo', 0] }
+        }
+      },
+
+      // seller (top-level sellerId)
+      {
+        $lookup: {
+          from: 'sellers',
+          localField: 'sellerId',
+          foreignField: '_id',
+          as: 'sellerId'
+        }
+      },
+      {
+        $unwind: {
+          path: '$sellerId',
+          preserveNullAndEmptyArrays: true
+        }
+      },
+
+      // seller avatar
+      {
+        $lookup: {
+          from: 'images',
+          localField: 'sellerId.avatar',
+          foreignField: '_id',
+          as: '_sellerAvatar'
+        }
+      },
+      {
+        $addFields: {
+          'sellerId.avatar': { $arrayElemAt: ['$_sellerAvatar', 0] }
+        }
+      }
+    );
+
+    // Remove sensitive seller fields
+    pipeline.push({
+      $project: {
+        _shopLogo: 0,
+        _sellerAvatar: 0,
+
+        'sellerId.password': 0,
+        'sellerId.verificationDocuments': 0,
+        'sellerId.paymentDetails': 0,
+        'sellerId.stripeAccountId': 0,
+        'sellerId.paystackCustomerCode': 0,
+        'sellerId.flutterwaveMerchantId': 0,
+        'sellerId.deactivationReason': 0
+      }
+    });
+
+    // Pagination + total in one roundtrip
+    pipeline.push({
+      $facet: {
+        data: [{ $skip: skip }, { $limit: parsedLimit }],
+        meta: [{ $count: 'total' }]
+      }
+    });
+
+    const result = await Product.aggregate(pipeline);
+    const agg = result[0] || { data: [], meta: [] };
+    const products = agg.data || [];
+    const total = agg.meta?.[0]?.total || 0;
+
+    // Suggestions (page-level lightweight)
     const titleSuggestions = new Set<string>();
     const brandSuggestions = new Set<string>();
     const tagSuggestions = new Set<string>();
 
-    for (const p of products as any[]) {
+    for (const p of products) {
       if (p.title) titleSuggestions.add(p.title);
       if (p.brand) brandSuggestions.add(p.brand);
       if (Array.isArray(p.tags)) {
@@ -1790,7 +1998,7 @@ export const searchProducts = async (
       }
     }
 
-    res.status(200).json({
+   res.status(200).json({
       success: true,
       query: queryTerm,
       data: products,
@@ -1808,12 +2016,408 @@ export const searchProducts = async (
         brand: brand ? String(brand) : undefined,
         shopId: shopId ? String(shopId) : undefined,
         sellerId: sellerId ? String(sellerId) : undefined,
-        inStock: parsedInStock
+        inStock: parsedInStock,
+        minPrice: parsedMinPrice,
+        maxPrice: parsedMaxPrice
       },
       suggestions: {
         titles: Array.from(titleSuggestions).slice(0, 8),
         brands: Array.from(brandSuggestions).slice(0, 8),
         tags: Array.from(tagSuggestions).slice(0, 10)
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Top Shops
+export const getTopShops = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const {
+      limit = '10',
+      category,
+      city,
+      country,
+      verifiedOnly = 'false',
+      featuredOnly = 'false',
+      sortBy = 'top-rated' // top-rated | most-reviewed | featured | most-orders | newest
+    } = req.query;
+
+    const MAX_LIMIT = 50;
+    const parsedLimit = Math.min(MAX_LIMIT, Math.max(1, Number(limit) || 10));
+
+    const toBool = (value: unknown): boolean | undefined => {
+      if (value === undefined || value === null || value === '') return undefined;
+      const v = String(value).toLowerCase();
+      if (['true', '1', 'yes'].includes(v)) return true;
+      if (['false', '0', 'no'].includes(v)) return false;
+      return undefined;
+    };
+
+    const escapeRegex = (str: string) =>
+      str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    const filter: Record<string, any> = {
+      isActive: true
+    };
+
+    if (category && String(category).trim()) {
+      filter.category = String(category).trim();
+    }
+
+    if (city && String(city).trim()) {
+      filter['address.city'] = new RegExp(
+        `^${escapeRegex(String(city).trim())}$`,
+        'i'
+      );
+    }
+
+    if (country && String(country).trim()) {
+      filter['address.country'] = new RegExp(
+        `^${escapeRegex(String(country).trim())}$`,
+        'i'
+      );
+    }
+
+    const parsedVerifiedOnly = toBool(verifiedOnly);
+    const parsedFeaturedOnly = toBool(featuredOnly);
+
+    if (parsedVerifiedOnly === true) {
+      filter.isVerifiedShop = true;
+    }
+
+    if (parsedFeaturedOnly === true) {
+      filter.isFeatured = true;
+    }
+
+    let sort: Record<string, 1 | -1> = {
+      rating: -1,
+      totalReviews: -1,
+      completedOrders: -1,
+      totalOrders: -1,
+      createdAt: -1
+    };
+
+    switch (String(sortBy)) {
+      case 'most-reviewed':
+        sort = {
+          totalReviews: -1,
+          rating: -1,
+          completedOrders: -1,
+          createdAt: -1
+        };
+        break;
+      case 'featured':
+        sort = {
+          isFeatured: -1,
+          isVerifiedShop: -1,
+          rating: -1,
+          totalReviews: -1,
+          createdAt: -1
+        };
+        break;
+      case 'most-orders':
+        sort = {
+          completedOrders: -1,
+          totalOrders: -1,
+          rating: -1,
+          totalReviews: -1,
+          createdAt: -1
+        };
+        break;
+      case 'newest':
+        sort = { createdAt: -1 };
+        break;
+      case 'top-rated':
+      default:
+        sort = {
+          rating: -1,
+          totalReviews: -1,
+          completedOrders: -1,
+          totalOrders: -1,
+          createdAt: -1
+        };
+        break;
+    }
+
+    const shops = await Shop.find(filter)
+      .populate('avatar')
+      .populate('coverBanner')
+      .populate('logo')
+      .populate('gallery')
+      .populate({
+        path: 'seller',
+        select: `
+          -password
+          -verificationDocuments
+          -paymentDetails
+          -stripeAccountId
+          -paystackCustomerCode
+          -flutterwaveMerchantId
+          -deactivationReason
+        `,
+        populate: [{ path: 'avatar' }]
+      })
+      .sort(sort)
+      .limit(parsedLimit)
+      .lean();
+
+     res.status(200).json({
+      success: true,
+      data: shops,
+      meta: {
+        count: shops.length,
+        limit: parsedLimit,
+        sortBy: String(sortBy)
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getProductsByShopSlug = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { slug } = req.params;
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
+    const skip = (page - 1) * limit;
+
+    const shop = await Shop.findOne({ slug, isActive: true }).select('_id');
+
+    if (!shop) {
+      res.status(404).json({ success: false, message: 'Shop not found' });
+      return; // ✅ important
+    }
+
+    const now = new Date();
+
+    const filter = {
+      shopId: shop._id,
+      status: 'active',
+      isDeleted: false,
+      $or: [
+        { startingDate: { $exists: false } },
+        {
+          startingDate: { $lte: now },
+          endingDate: { $gte: now }
+        }
+      ]
+    };
+
+    const [products, total] = await Promise.all([
+      Product.find(filter)
+        .populate('image', 'url')
+        .populate('gallery', 'url')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Product.countDocuments(filter)
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: products,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+    return;
+  } catch (error) {
+    next(error);
+    return;
+  }
+};
+
+export const getFeaturedProducts = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 12));
+    const now = new Date();
+
+    const products = await Product.find({
+      status: 'active',
+      isDeleted: false,
+      featured: true,
+      $or: [
+        { startingDate: { $exists: false } },
+        {
+          startingDate: { $lte: now },
+          endingDate: { $gte: now }
+        }
+      ]
+    })
+      .populate('image', 'url')
+      .populate('gallery', 'url')
+      .populate({
+        path: 'shopId',
+        populate: [{ path: 'logo' }]
+      })
+      .sort({ createdAt: -1, views: -1 })
+      .limit(limit)
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      data: products,
+      meta: { count: products.length, limit }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getTrendingProducts = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 12));
+    const now = new Date();
+
+    const products = await Product.find({
+      status: 'active',
+      isDeleted: false,
+      $or: [
+        { startingDate: { $exists: false } },
+        {
+          startingDate: { $lte: now },
+          endingDate: { $gte: now }
+        }
+      ]
+    })
+      .populate('image', 'url')
+      .populate({
+        path: 'shopId',
+        populate: [{ path: 'logo' }]
+      })
+      .sort({ views: -1, orderCount: -1, createdAt: -1 })
+      .limit(limit)
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      data: products,
+      meta: { count: products.length, limit }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getNewArrivals = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 12));
+    const now = new Date();
+
+    const products = await Product.find({
+      status: 'active',
+      isDeleted: false,
+      $or: [
+        { startingDate: { $exists: false } },
+        {
+          startingDate: { $lte: now },
+          endingDate: { $gte: now }
+        }
+      ]
+    })
+      .populate('image', 'url')
+      .populate({
+        path: 'shopId',
+        populate: [{ path: 'logo' }]
+      })
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .lean();
+
+     res.status(200).json({
+      success: true,
+      data: products,
+      meta: { count: products.length, limit }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getHomepageFeed = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const now = new Date();
+
+    const productBaseFilter = {
+      status: 'active',
+      isDeleted: false,
+      $or: [
+        { startingDate: { $exists: false } },
+        {
+          startingDate: { $lte: now },
+          endingDate: { $gte: now }
+        }
+      ]
+    };
+
+    const [topShops, featuredProducts, trendingProducts, newArrivals] =
+      await Promise.all([
+        Shop.find({ isActive: true })
+          .populate('logo')
+          .sort({ rating: -1, totalReviews: -1, completedOrders: -1, createdAt: -1 })
+          .limit(8)
+          .lean(),
+
+        Product.find({ ...productBaseFilter, featured: true })
+          .populate('image', 'url')
+          .populate({ path: 'shopId', populate: [{ path: 'logo' }] })
+          .sort({ createdAt: -1, views: -1 })
+          .limit(12)
+          .lean(),
+
+        Product.find(productBaseFilter)
+          .populate('image', 'url')
+          .populate({ path: 'shopId', populate: [{ path: 'logo' }] })
+          .sort({ views: -1, orderCount: -1, createdAt: -1 })
+          .limit(12)
+          .lean(),
+
+        Product.find(productBaseFilter)
+          .populate('image', 'url')
+          .populate({ path: 'shopId', populate: [{ path: 'logo' }] })
+          .sort({ createdAt: -1 })
+          .limit(12)
+          .lean()
+      ]);
+
+     res.status(200).json({
+      success: true,
+      data: {
+        topShops,
+        featuredProducts,
+        trendingProducts,
+        newArrivals
       }
     });
   } catch (error) {
