@@ -1605,3 +1605,218 @@ export const getFilteredShops = async (
     next(error);
   }
 };
+
+// search products
+export const searchProducts = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const {
+      q = '',
+      category,
+      brand,
+      shopId,
+      sellerId,
+      inStock,
+      page = '1',
+      limit = '20',
+      sortBy = 'relevance'
+    } = req.query;
+
+    const MAX_LIMIT = 50;
+
+    const toBool = (value: unknown): boolean | undefined => {
+      if (value === undefined || value === null || value === '') return undefined;
+      const v = String(value).toLowerCase();
+      if (['true', '1', 'yes'].includes(v)) return true;
+      if (['false', '0', 'no'].includes(v)) return false;
+      return undefined;
+    };
+
+    const escapeRegex = (str: string) =>
+      str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    const parsedPage = Math.max(1, Number(page) || 1);
+    const parsedLimit = Math.min(MAX_LIMIT, Math.max(1, Number(limit) || 20));
+    const skip = (parsedPage - 1) * parsedLimit;
+    const parsedInStock = toBool(inStock);
+
+    const now = new Date();
+    const filter: Record<string, any> = {
+      status: 'active',
+      isDeleted: false,
+      $or: [
+        { startingDate: { $exists: false } },
+        {
+          startingDate: { $lte: now },
+          endingDate: { $gte: now }
+        }
+      ]
+    };
+
+    // optional exact-ish filters
+    if (category && String(category).trim()) {
+      filter.category = String(category).trim();
+    }
+
+    if (brand && String(brand).trim()) {
+      filter.brand = String(brand).trim();
+    }
+
+    if (shopId && mongoose.Types.ObjectId.isValid(String(shopId))) {
+      filter.shopId = new mongoose.Types.ObjectId(String(shopId));
+    }
+
+    if (sellerId && mongoose.Types.ObjectId.isValid(String(sellerId))) {
+      filter.sellerId = new mongoose.Types.ObjectId(String(sellerId));
+    }
+
+    if (parsedInStock === true) {
+      filter.stock = { $gt: 0 };
+    } else if (parsedInStock === false) {
+      filter.stock = { $lte: 0 };
+    }
+
+    // search query
+    const queryTerm = String(q).trim();
+
+    if (queryTerm) {
+      const rx = new RegExp(escapeRegex(queryTerm), 'i');
+
+      filter.$and = filter.$and || [];
+      filter.$and.push({
+        $or: [
+          { title: rx },
+          { slug: rx },
+          { brand: rx },
+          { category: rx },
+          { tags: { $in: [rx] } },
+          { shortDescription: rx },
+          { detailedDescription: rx }
+        ]
+      });
+    }
+
+    // sorting
+    let sort: Record<string, 1 | -1> = { createdAt: -1 };
+
+    switch (String(sortBy)) {
+      case 'newest':
+        sort = { createdAt: -1 };
+        break;
+      case 'oldest':
+        sort = { createdAt: 1 };
+        break;
+      case 'price-asc':
+        sort = { salePrice: 1, regularPrice: 1, createdAt: -1 };
+        break;
+      case 'price-desc':
+        sort = { salePrice: -1, regularPrice: -1, createdAt: -1 };
+        break;
+      case 'popular':
+        sort = { views: -1, orderCount: -1, createdAt: -1 };
+        break;
+      case 'top-rated':
+        sort = { 'ratings.average': -1, 'ratings.count': -1, createdAt: -1 };
+        break;
+      case 'relevance':
+      default:
+        // for regex search we don't have text score here, so use popularity + recency
+        sort = queryTerm
+          ? { views: -1, orderCount: -1, createdAt: -1 }
+          : { createdAt: -1 };
+        break;
+    }
+
+    const [products, total] = await Promise.all([
+      Product.find(filter)
+        .populate('image', 'url fileId')
+        .populate('gallery', 'url fileId')
+        .populate({
+          path: 'shopId',
+          populate: [
+            { path: 'logo' },
+            {
+              path: 'seller',
+              select: `
+                -password
+                -verificationDocuments
+                -paymentDetails
+                -stripeAccountId
+                -paystackCustomerCode
+                -flutterwaveMerchantId
+                -deactivationReason
+              `,
+              populate: [{ path: 'avatar' }]
+            }
+          ]
+        })
+        .populate({
+          path: 'sellerId',
+          select: `
+            -password
+            -verificationDocuments
+            -paymentDetails
+            -stripeAccountId
+            -paystackCustomerCode
+            -flutterwaveMerchantId
+            -deactivationReason
+          `,
+          populate: [{ path: 'avatar' }, { path: 'shop' }]
+        })
+        .sort(sort)
+        .skip(skip)
+        .limit(parsedLimit)
+        .lean(),
+
+      Product.countDocuments(filter)
+    ]);
+
+    // lightweight suggestions from returned page
+    const titleSuggestions = new Set<string>();
+    const brandSuggestions = new Set<string>();
+    const tagSuggestions = new Set<string>();
+
+    for (const p of products as any[]) {
+      if (p.title) titleSuggestions.add(p.title);
+      if (p.brand) brandSuggestions.add(p.brand);
+      if (Array.isArray(p.tags)) {
+        for (const t of p.tags) {
+          if (typeof t === 'string' && t.trim()) tagSuggestions.add(t.trim());
+          if (tagSuggestions.size >= 10) break;
+        }
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      query: queryTerm,
+      data: products,
+      pagination: {
+        page: parsedPage,
+        limit: parsedLimit,
+        total,
+        totalPages: Math.ceil(total / parsedLimit),
+        hasNextPage: parsedPage * parsedLimit < total,
+        hasPrevPage: parsedPage > 1
+      },
+      sort: String(sortBy),
+      appliedFilters: {
+        category: category ? String(category) : undefined,
+        brand: brand ? String(brand) : undefined,
+        shopId: shopId ? String(shopId) : undefined,
+        sellerId: sellerId ? String(sellerId) : undefined,
+        inStock: parsedInStock
+      },
+      suggestions: {
+        titles: Array.from(titleSuggestions).slice(0, 8),
+        brands: Array.from(brandSuggestions).slice(0, 8),
+        tags: Array.from(tagSuggestions).slice(0, 10)
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
