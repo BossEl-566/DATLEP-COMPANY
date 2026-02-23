@@ -1,102 +1,100 @@
+// app/components/ProductGrid.tsx
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import ProductCard from './ProductCard';
 import { useQuery } from '@tanstack/react-query';
 import { Product } from './types';
-import { TrendingUp, Sparkles, Star } from 'lucide-react';
+import { TrendingUp, Sparkles, Star, Clock, Award } from 'lucide-react';
 import api from '../lib/axios';
 
 interface ProductGridProps {
   title: string;
-  type: 'popular' | 'featured' | 'top-rated' | 'top10';
+  type: 'popular' | 'featured' | 'top-rated' | 'new-arrivals' | 'top10';
   limit?: number;
+  viewAllLink?: string;
 }
 
-const ProductGrid: React.FC<ProductGridProps> = ({ title, type, limit = 8 }) => {
+const ProductGrid: React.FC<ProductGridProps> = ({ 
+  title, 
+  type, 
+  limit = 8, 
+  viewAllLink 
+}) => {
   const { data, isLoading, error } = useQuery({
     queryKey: ['products', type, limit],
     queryFn: async () => {
-      const response = await api.get('/product/api/get-all-products', {
-  params: {
-    type,
-    limit,
-    page: 1
-  }
-});
+      let endpoint = '';
+      let params: any = { limit, page: 1 };
+
+      switch (type) {
+        case 'featured':
+          endpoint = '/product/api/featured-products';
+          break;
+        case 'popular':
+        case 'top-rated':
+          endpoint = '/product/api/trending-products';
+          params.sortBy = type === 'top-rated' ? 'rating' : 'views';
+          break;
+        case 'new-arrivals':
+          endpoint = '/product/api/new-arrivals';
+          break;
+        case 'top10':
+          endpoint = '/product/api/get-filtered-products';
+          params.sortBy = 'best-selling';
+          params.limit = 10;
+          break;
+        default:
+          endpoint = '/product/api/get-filtered-products';
+      }
+
+      const response = await api.get(endpoint, { params });
       return response.data;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
     retry: 2,
   });
 
   const getIcon = () => {
     switch (type) {
       case 'popular':
-        return <TrendingUp className="w-5 h-5" />;
+        return <TrendingUp className="w-5 h-5 text-orange-500" />;
       case 'featured':
-        return <Sparkles className="w-5 h-5" />;
+        return <Sparkles className="w-5 h-5 text-purple-500" />;
       case 'top-rated':
-        return <Star className="w-5 h-5" />;
+        return <Star className="w-5 h-5 text-yellow-500" />;
+      case 'new-arrivals':
+        return <Clock className="w-5 h-5 text-blue-500" />;
+      case 'top10':
+        return <Award className="w-5 h-5 text-red-500" />;
       default:
         return null;
     }
   };
 
-  const getBadgeColor = () => {
+  const getBadge = () => {
     switch (type) {
       case 'popular':
-        return 'bg-orange-100 text-orange-700 border-orange-200';
+        return { text: 'Trending', color: 'bg-orange-100 text-orange-700' };
       case 'featured':
-        return 'bg-purple-100 text-purple-700 border-purple-200';
+        return { text: "Editor's Pick", color: 'bg-purple-100 text-purple-700' };
       case 'top-rated':
-        return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+        return { text: 'Highly Rated', color: 'bg-yellow-100 text-yellow-700' };
+      case 'new-arrivals':
+        return { text: 'Just In', color: 'bg-blue-100 text-blue-700' };
+      case 'top10':
+        return { text: 'Best Sellers', color: 'bg-red-100 text-red-700' };
       default:
-        return 'bg-gray-100 text-gray-700 border-gray-200';
+        return null;
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="mb-12">
-        <div className="h-8 bg-gray-200 rounded w-48 mb-6 animate-pulse"></div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-white rounded-xl shadow-md overflow-hidden animate-pulse">
-              <div className="h-64 bg-gray-200"></div>
-              <div className="p-4">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
-                <div className="h-6 bg-gray-200 rounded w-1/3"></div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="mb-12">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
-            {getIcon()}
-            <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
-          </div>
-        </div>
-        <div className="text-center py-12 bg-gray-50 rounded-xl border border-gray-200">
-          <p className="text-gray-600">Unable to load products. Please try again.</p>
-        </div>
-      </div>
-    );
-  }
-
+  const badge = getBadge();
   const products = data?.data || [];
 
-  if (products.length === 0) {
-    return null;
-  }
+  if (isLoading) return null;
+  if (error || products.length === 0) return null;
 
   return (
     <div className="mb-12">
@@ -105,43 +103,30 @@ const ProductGrid: React.FC<ProductGridProps> = ({ title, type, limit = 8 }) => 
         <div className="flex items-center gap-3">
           {getIcon()}
           <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
-          <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getBadgeColor()}`}>
-            {type === 'popular' ? 'Trending' : 
-             type === 'featured' ? 'Editor\'s Pick' : 
-             type === 'top-rated' ? 'Highly Rated' : 'Best Sellers'}
-          </span>
+          {badge && (
+            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${badge.color}`}>
+              {badge.text}
+            </span>
+          )}
         </div>
         
-        {data?.pagination && data.pagination.totalPages > 1 && (
-          <button className="text-sm font-medium text-purple-600 hover:text-purple-800">
-            View All →
-          </button>
+        {viewAllLink && (
+          <Link 
+            href={viewAllLink} 
+            className="text-sm font-medium text-purple-600 hover:text-purple-800 flex items-center gap-1"
+          >
+            View All
+            <span className="text-lg">→</span>
+          </Link>
         )}
       </div>
 
       {/* Product Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {products.map((product: Product) => (
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+        {products.slice(0, limit).map((product: Product) => (
           <ProductCard key={product._id} product={product} />
         ))}
       </div>
-
-      {/* Pagination for non-top10 */}
-      {type !== 'top10' && data?.pagination && data.pagination.totalPages > 1 && (
-        <div className="flex justify-center mt-8">
-          <div className="flex items-center gap-2">
-            <button className="px-3 py-1 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">
-              Previous
-            </button>
-            <span className="px-3 py-1 text-sm text-gray-600">
-              Page {data.pagination.page} of {data.pagination.totalPages}
-            </span>
-            <button className="px-3 py-1 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">
-              Next
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
