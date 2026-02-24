@@ -1,6 +1,6 @@
 import express from 'express';
 import { Router } from 'express';
-import { bespokeForgotPassword, createShop, getBespokeCreator, getLoggedInSeller, getUser, loginBespokeCreator, loginUser, paystackSetup, refreshBespokeToken, refreshSellerToken, refreshToken,registerSeller, resetBespokePassword, resetUserPassword, sellerLogin, sendBespokeCreatorOtp, skipPaymentSetup, updateBespokeCreator, userForgotPassword, userRegistration, verifyBespokeCreatorOtp, verifyBespokeForgotPassword, verifySeller, verifyUserForgotPassword, verifyUserOtp } from '../controllers/auth.controller';
+import { bespokeForgotPassword, createShop, getBespokeCreator, getLoggedInSeller, getUser, loginBespokeCreator, loginUser, logoutUser, paystackSetup, refreshBespokeToken, refreshSellerToken, refreshToken,registerSeller, resetBespokePassword, resetUserPassword, sellerLogin, sendBespokeCreatorOtp, skipPaymentSetup, updateBespokeCreator, userForgotPassword, userRegistration, verifyBespokeCreatorOtp, verifyBespokeForgotPassword, verifySeller, verifyUserForgotPassword, verifyUserOtp } from '../controllers/auth.controller';
 import isUserAuthenticated from '../../../../packages/middleware/isUserAuthenticated';
 import isSellerAuthenticated from '../../../../packages/middleware/isSellerAuthenticated';
 import isBespokeCreatorAuthenticated from '../../../../packages/middleware/isBespokeAuthenticated';
@@ -14,6 +14,7 @@ router.post('/seller-refresh-token', refreshSellerToken);
 router.post('/user-registration', userRegistration);
 router.post('/verify-user-otp', verifyUserOtp);
 router.post('/login-user', loginUser);
+router.post('/logout-user', logoutUser);
 router.post('/refresh-token', refreshToken);
 router.get('/logged-in-user', isUserAuthenticated, getUser);
 router.post('/forgot-password-user', userForgotPassword);

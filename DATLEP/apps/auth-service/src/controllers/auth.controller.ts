@@ -189,6 +189,24 @@ export const refreshToken = async (
   }
 };
 
+// Logout User
+export const logoutUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    res.clearCookie("user_refreshToken");
+    res.clearCookie("user_accessToken");
+    res.status(200).json({
+      success: true,
+      message: "Logout successful",
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
 
 // get logged in user details
 export const getUser = async (
