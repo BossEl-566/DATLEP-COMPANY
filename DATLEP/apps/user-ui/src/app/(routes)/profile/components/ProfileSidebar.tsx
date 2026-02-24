@@ -2,7 +2,6 @@
 'use client'
 
 import React from 'react'
-import Link from 'next/link'
 import { 
   User, 
   ShoppingBag, 
@@ -11,7 +10,9 @@ import {
   MapPin, 
   Key, 
   LogOut,
-  ChevronRight
+  ChevronRight,
+  Phone,
+  Mail
 } from 'lucide-react'
 
 interface ProfileSidebarProps {
@@ -39,22 +40,59 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
     console.log('Logging out...')
   }
 
+  const getUserTypeColor = (type: string) => {
+    switch(type) {
+      case 'customer': return 'bg-blue-100 text-blue-700'
+      case 'seller': return 'bg-green-100 text-green-700'
+      case 'bespoke': return 'bg-purple-100 text-purple-700'
+      default: return 'bg-gray-100 text-gray-700'
+    }
+  }
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden sticky top-4">
       {/* User Info Summary */}
       <div className="p-6 border-b border-gray-100">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-semibold text-lg">
+          <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-semibold text-xl">
             {user?.name?.charAt(0) || 'U'}
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-900 truncate">{user?.name}</h3>
-            <p className="text-sm text-gray-500 truncate">{user?.email}</p>
+            <h3 className="font-semibold text-gray-900 truncate text-lg">{user?.name}</h3>
+            <div className="flex items-center space-x-1 text-sm text-gray-500 mt-1">
+              <Mail size={14} />
+              <p className="truncate">{user?.email}</p>
+            </div>
+            {user?.mobileNumber && (
+              <div className="flex items-center space-x-1 text-sm text-gray-500 mt-1">
+                <Phone size={14} />
+                <p className="truncate">{user?.mobileNumber}</p>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {/* User Type Badge */}
+        <div className="mt-4">
+          <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${getUserTypeColor(user?.userType)}`}>
+            {user?.userType?.charAt(0).toUpperCase() + user?.userType?.slice(1)}
+          </span>
+        </div>
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-gray-100">
+          <div className="text-center">
+            <p className="text-lg font-bold text-purple-600">{user?.following?.length || 0}</p>
+            <p className="text-xs text-gray-500">Following</p>
+          </div>
+          <div className="text-center">
+            <p className="text-lg font-bold text-purple-600">0</p>
+            <p className="text-xs text-gray-500">Reviews</p>
           </div>
         </div>
       </div>
 
-      {/* Navigation Menu */}
+      {/* Navigation Menu - Rest remains the same */}
       <nav className="p-4">
         <ul className="space-y-1">
           {menuItems.map((item) => {

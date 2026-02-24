@@ -2,7 +2,7 @@
 'use client'
 
 import React from 'react'
-import { Gift, Award, Settings, CreditCard, ChevronRight } from 'lucide-react'
+import { Gift, Award, Settings, CreditCard, ChevronRight, TrendingUp} from 'lucide-react'
 
 interface ProfileRightSidebarProps {
   user: any
@@ -17,9 +17,70 @@ const ProfileRightSidebar: React.FC<ProfileRightSidebarProps> = ({ user }) => {
     alert('Referral link copied!')
   }
 
+  // Conditional content based on user type
+  const renderUserTypeSpecificContent = () => {
+    switch(user?.userType) {
+      case 'seller':
+        return (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="p-6">
+              <div className="flex items-center space-x-2 mb-4">
+                <TrendingUp className="text-green-600" size={20} />
+                <h3 className="font-semibold text-gray-900">Seller Dashboard</h3>
+              </div>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Active Listings</span>
+                  <span className="font-bold text-gray-900">12</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Sales This Month</span>
+                  <span className="font-bold text-green-600">$1,245</span>
+                </div>
+                <button className="w-full mt-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 transition-colors">
+                  Manage Store
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      
+      case 'bespoke':
+        return (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="p-6">
+              <div className="flex items-center space-x-2 mb-4">
+                <Award className="text-purple-600" size={20} />
+                <h3 className="font-semibold text-gray-900">Bespoke Professional</h3>
+              </div>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Active Orders</span>
+                  <span className="font-bold text-gray-900">5</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Completion Rate</span>
+                  <span className="font-bold text-green-600">98%</span>
+                </div>
+                <button className="w-full mt-2 bg-purple-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-purple-700 transition-colors">
+                  View Orders
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      
+      default:
+        return null
+    }
+  }
+
   return (
-    <div className="space-y-6">
-      {/* Referral Program Card */}
+    <div className="space-y-6 sticky top-4">
+      {/* User Type Specific Content */}
+      {renderUserTypeSpecificContent()}
+
+      {/* Referral Program Card - For all users */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="p-6">
           <div className="flex items-center space-x-2 mb-4">
@@ -49,6 +110,13 @@ const ProfileRightSidebar: React.FC<ProfileRightSidebarProps> = ({ user }) => {
           <div className="flex items-center justify-between text-sm">
             <span className="text-gray-600">Your points balance:</span>
             <span className="font-bold text-purple-600">2,500 pts</span>
+          </div>
+
+          <div className="mt-3 pt-3 border-t border-gray-100">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600">Total Referrals:</span>
+              <span className="font-medium text-gray-900">8 friends</span>
+            </div>
           </div>
         </div>
       </div>
