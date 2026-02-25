@@ -12,7 +12,7 @@
   "include": [
     "src/**/*.ts",
     "../../packages/**/*.ts"
-, "../order-service/src/routes/order.route.ts"  ],
+  ],
   "exclude": [],
   "references": [
     {
