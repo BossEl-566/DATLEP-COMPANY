@@ -11,4 +11,5 @@ export * from "./models/Discount";
 export * from "./models/Product";
 export * from "./models/UserAnalytics";
 export * from "./models/ProductAnalytics";
+export * from "./models/Address";
 

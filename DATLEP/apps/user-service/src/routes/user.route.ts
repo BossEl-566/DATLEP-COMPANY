@@ -1,12 +1,14 @@
 import express from "express";
-import { testUserController } from "../controllers/user.controller";
+import { createUserAddress, deleteUserAddress, getSingleUserAddress, getUserAddresses, updateUserAddress } from "../controllers/user.controller";
+import isUserAuthenticated from '../../../../packages/middleware/isUserAuthenticated';
+
 
 const router = express.Router();
 
-// 🔹 Test route
-router.get("/", testUserController);
-
-// 🔹 Optional example route
-router.get("/profile", testUserController);
+router.post('/:userId/addresses/create-address', isUserAuthenticated, createUserAddress);
+router.get('/:userId/addresses/get-addresses', isUserAuthenticated, getUserAddresses);
+router.get('/:userId/addresses/:addressId', isUserAuthenticated, getSingleUserAddress);
+router.delete('/:userId/addresses/:addressId', isUserAuthenticated, deleteUserAddress);
+router.patch('/:userId/addresses/:addressId', isUserAuthenticated, updateUserAddress);
 
 export default router;
