@@ -2,7 +2,7 @@
 
 import React from 'react';
 import PaymentForm from '../components/PaymentForm';
-import { BespokeFormData } from '../components/types';
+import { BespokeFormData } from '../types';
 
 interface PaymentStepperProps {
   onSubmit?: (data: Partial<BespokeFormData>) => void;
